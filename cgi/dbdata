@@ -1,0 +1,17 @@
+# Credit Pool Database Data
+# Sample config file
+#
+# $Id: dbdata,v 1.1.1.1 2001/08/29 00:49:36 homic Exp $
+#
+# The following fields should be defined
+# 
+# DSN - I don't know what DSN stands for, or what it means
+# DATABASE - The name of the database to access
+# PASSWORD - Your database password
+#
+# Anything after # is ignored... even if your password has
+# a # in it... oops! ;)
+
+DSN = DBI:mysql:database=pool;host=localhost
+DATABASE = pool
+PASSWORD = YOUR_PASSWORD_GOES_HERE

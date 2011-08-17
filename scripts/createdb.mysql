@@ -1,0 +1,51 @@
+#
+# Credit Pool - Database creation script
+# $Id: createdb.mysql,v 1.2 2001/09/08 14:43:01 homic Exp $
+#
+# Copyright (C) 2001 Chuck Homic <homic@users.sourceforge.net>
+# Licensed under the GNU GPL; see the file LICENSE in this distribution.
+#
+# Usage:
+#
+# mysql -u <pool-user> -p < createdb.mysql
+#
+# This will just pound the following commands to mysql, assuming
+# you have already set up a user, and set up permissions accordingly.
+# No error checking or anything else useful is provided.
+#
+
+create database pool;
+use pool;
+
+create table users (
+		name varchar(15) not null primary key,
+		lastname varchar(100) not null,
+		firstname varchar(100) not null,
+		email varchar(255),
+		password varchar(16),
+		credit int(11) not null default 0,
+		flags set('exists','admin') default 'exists'
+	);
+
+create table trans_user (
+		xid int(11) not null default 0,
+		index (xid),
+		name char(15),
+		credit int(11) not null default 0,
+		entered timestamp,
+		status enum('pending','confirmed') not null default 'pending'
+	);
+
+create table trans_global (
+		xid int(11) not null primary key default 0 auto_increment,
+		creator varchar(15),
+		date date,
+		entered timestamp,
+		descrip varchar(100)
+	);
+
+create table auth_secrets (
+		name char(15) not null primary key,
+		cookie char(15),
+		stamp timestamp
+	);
