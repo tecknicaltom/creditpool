@@ -22,6 +22,7 @@
 #
 
 use strict;
+use warnings;
 use DBI;
 use CGI qw(:standard);
 #use Chart::Lines;
@@ -731,7 +732,7 @@ sub passwordCommit {
 		userError("Passwords do no match.");
 	}
 
-	my $query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
+	$query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
 	$query->execute($p1, $name);
 }
 	
