@@ -21,20 +21,21 @@
 # 02111-1307, USA, or email homic@users.sourceforge.net.
 #
 
+use strict;
 use DBI;
 use CGI qw(:standard);
 #use Chart::Lines;
 #use Chart::Bars;
 
-$dbh=dbConnect();
-$cgi=CGI->new();
+my $dbh=dbConnect();
+my $cgi=CGI->new();
 
 # Throw some globals
-$name = $cgi->param('name');
-$password = $cgi->param('password');
-$cookie = $cgi->param('cookie');
-$action = $cgi->param('action');
-$global_output_format = $cgi->param('format');
+my $name = $cgi->param('name');
+my $password = $cgi->param('password');
+my $cookie = $cgi->param('cookie');
+my $action = $cgi->param('action');
+my $global_output_format = $cgi->param('format');
 
 #HACK: render a chart before we generate text/html
 if ($action eq "Chart") {
@@ -166,10 +167,10 @@ EOF
 
 }
 sub summary {
-	$query=$dbh->prepare("select * from users where name=?");
+	my $query=$dbh->prepare("select * from users where name=?");
 	$query->execute($name);
-	$ref=$query->fetchrow_hashref();
-	$history = $cgi->param('history');
+	my $ref=$query->fetchrow_hashref();
+	my $history = $cgi->param('history');
 
 	if ($history eq "") {
 		$history = 7;
@@ -180,7 +181,7 @@ sub summary {
 	
 	print "<h1>Summary Report for $ref->{'firstname'} $ref->{'lastname'}</h1>";
 
-	$bal = $ref->{'credit'};
+	my $bal = $ref->{'credit'};
 
 	$query=$dbh->prepare("select * from trans_user where name=? and status=\"pending\"");
 	$query->execute($name);
@@ -230,10 +231,10 @@ sub summary {
 	$query->execute();
 
 	print "<table border=1>";
-	$sum = 0;
-	$users = 0;
+	my $sum = 0;
+	my $users = 0;
 	while ($ref=$query->fetchrow_hashref()) {
-		$value = $ref->{'credit'};
+		my $value = $ref->{'credit'};
 		print "<tr>";
 		print "<td>" . $ref->{'firstname'} . " " . $ref->{'lastname'} . "</td>";
 		print "<td>" . ::money($value) . "</td>";
@@ -277,11 +278,11 @@ sub transList {
 	print "<th>Who did it?</th>";
 	print "</tr>";
 
-	$ref=$query->fetchrow_hashref();
+	my $ref=$query->fetchrow_hashref();
 	while($ref) {
-		$g_query=$dbh->prepare("select * from trans_global where xid=$ref->{'xid'}");
+		my $g_query=$dbh->prepare("select * from trans_global where xid=$ref->{'xid'}");
 		$g_query->execute();
-		$g_ref=$g_query->fetchrow_hashref();
+		my $g_ref=$g_query->fetchrow_hashref();
 		print "<tr>";
 		if ($confirm) {
 			print "<td align=center><input type=\"checkbox\" name=\"confirm\" value=\"$ref->{'xid'}\"></td>";
@@ -316,14 +317,14 @@ sub confirmSelected {
 	my @confirm=$cgi->param('confirm');
 	my $i;
 
-	$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=? and xid=?");
+	my $query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=? and xid=?");
 	for ($i = 0; $i <= $#confirm; $i++) {
 		$query->execute($name, $confirm[$i]);
 	}
 }
 
 sub confirmAll{
-	$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=?");
+	my $query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=?");
 	$query->execute($name);
 }
 
@@ -332,7 +333,7 @@ sub pickFromList {
 	print "<h1>Select Users</h1>\n";
 	print "Select participants:\n";
 
-	$query=$dbh->prepare("select name,lastname,firstname from users where flags like '%exists%' order by lastname,firstname");
+	my $query=$dbh->prepare("select name,lastname,firstname from users where flags like '%exists%' order by lastname,firstname");
 	$query->execute();
 
 	print "<form action=\"\" method=\"post\">";
@@ -342,7 +343,7 @@ sub pickFromList {
 	print "<th>ID</th>";
 	print "<th>Name</th>";
 	print "</tr>";
-	while ($ref=$query->fetchrow_hashref()) {
+	while (my $ref=$query->fetchrow_hashref()) {
 		if ($ref->{'name'} ne $name) {
 			print "<tr>";
 			print "<td align=center><input type=\"checkbox\" name=\"sucker\" value=\"$ref->{'name'}\"></td>";
@@ -382,10 +383,10 @@ sub enterTransData {
 	print "<th>...owes this much</th>";
 	print "</tr>";
 	
+	my $query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
 	for ($i = 0; $i <= $#suckers; $i++) {
-		$query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=\"$suckers[$i]\"");
-		$query->execute;
-		$ref=$query->fetchrow_hashref();
+		$query->execute($suckers[$i]);
+		my $ref=$query->fetchrow_hashref();
 
 		if ($ref) {
 			print "<tr>";
@@ -442,7 +443,7 @@ sub confirmTrans {
 		userError("You must enter a transaction description.");
 	}
 
-	@suckers = split(/ /, $suckerlist);
+	my @suckers = split(/ /, $suckerlist);
 	
 	if ($#suckers == -1) {
 		::fatal("No one's in the list?");
@@ -451,9 +452,9 @@ sub confirmTrans {
 	::progressHeader(2);
 	print "<h1>Transaction Confirmation</h1>";
 
-	$query=$dbh->prepare("select NOW() as time");
+	my $query=$dbh->prepare("select NOW() as time");
 	$query->execute();
-	$ref=$query->fetchrow_hashref();
+	my $ref=$query->fetchrow_hashref();
 
 	print "<form action=\"\" method=\"post\">";
 	print "<input type=\"hidden\" name=\"descrip\" value=\"" . ::armorHTMLString($descrip) . "\">";
@@ -516,12 +517,12 @@ sub verifyFinalizeIntegrity {
 	my $confirm;
 	my $error = 0;
 
-	for ($i = 0; $i <= $#suckers; $i++) {
-		$val = $cgi->param("val_$suckers[$i]") * 100;
+	my $query = $dbh->prepare("select name from users where flags like '%exists%' and name=?");
+	for (my $i = 0; $i <= $#suckers; $i++) {
+		my $val = $cgi->param("val_$suckers[$i]") * 100;
 
 		# verify existance of user
-		$query = $dbh->prepare("select name from users where flags like '%exists%' and name=\"$suckers[$i]\"");
-		$query->execute();
+		$query->execute($suckers[$i]);
 		if ($query->rows() != 1) {
 			::nonFatalUserError("User \"$suckers[$i]\" does not exist");
 			$error = 1;
@@ -568,20 +569,20 @@ sub finalizeTrans {
 
 	::verifyFinalizeIntegrity($suckerlist);
 
-	$query=$dbh->prepare("insert trans_global (creator,descrip) values(\"$name\",\"" . ::armorQString(::unArmorHTMLString($descrip)) . "\")");
+	my $query=$dbh->prepare("insert trans_global (creator,descrip) values(\"$name\",\"" . ::armorQString(::unArmorHTMLString($descrip)) . "\")");
 	$query->execute();
 
 	$query=$dbh->prepare("select LAST_INSERT_ID() as id");
 	$query->execute();
-	$xid=$query->fetchrow_hashref()->{'id'};
+	my $xid=$query->fetchrow_hashref()->{'id'};
 	
+	$query=$dbh->prepare("insert trans_user (xid,name,credit) values (?, ?, ?)");
 	for ($i = 0; $i <= $#suckers; $i++) {
 		$val = $cgi->param("val_$suckers[$i]") * 100;
 		$sum += $val;
 		
 		if ($val != 0) {
-			$query=$dbh->prepare("insert trans_user (xid,name,credit) values ($xid,\"$suckers[$i]\",$val)");
-			$query->execute();
+			$query->execute($xid, $suckers[$i], $val);
 
 			::addToCredit($suckers[$i],$val);
 		}
@@ -723,14 +724,14 @@ EOF
 sub passwordCommit {
 	my $query;
 
-	$p1 = $cgi->param('newpass1');
-	$p2 = $cgi->param('newpass2');
+	my $p1 = $cgi->param('newpass1');
+	my $p2 = $cgi->param('newpass2');
 
 	if ($p1 ne $p2) {
 		userError("Passwords do no match.");
 	}
 
-	$query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
+	my $query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
 	$query->execute($p1, $name);
 }
 	
@@ -744,19 +745,19 @@ sub confirmSession {
 	#}
 	if ($password ne "") {
 		# using password auth
-		$query = $dbh->prepare("select password from users where flags like '%exists%' and name=?");
+		my $query = $dbh->prepare("select password from users where flags like '%exists%' and name=?");
 		$query->execute($name);
-		$ref=$query->fetchrow_hashref();
+		my $ref=$query->fetchrow_hashref();
 		
 		if (!$ref) {
 			::userError("User \"$name\" doesn't exist.");
 		}
 		
-		$crypt_pwd=$ref->{'password'};
+		my $crypt_pwd=$ref->{'password'};
 
 		$query = $dbh->prepare("select OLD_PASSWORD(\"$password\") as password");
 		$query->execute();
-		$entered_pwd=$query->fetchrow_hashref()->{'password'};
+		my $entered_pwd=$query->fetchrow_hashref()->{'password'};
 
 		if ($crypt_pwd eq $entered_pwd) {
 			return;
@@ -764,7 +765,7 @@ sub confirmSession {
 	}
 
 	if ($cookie ne "") {
-		$query = $dbh->prepare("select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)");
+		my $query = $dbh->prepare("select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)");
 		$query->execute($name);
 
 		if ($query->rows() == 0) {
@@ -783,7 +784,7 @@ sub confirmSession {
 
 sub dbConnect {
 	my $line;
-	my $dsn, $dbName, $dbPasswd;
+	my ($dsn, $dbName, $dbPasswd);
 
 	# Ghetto parser
 	open HANDLE, "dbdata";
@@ -870,7 +871,7 @@ sub unArmorHTMLString {
 }
 
 sub fatal {
-	$msg = shift;
+	my $msg = shift;
 	print "<h1>Error</h1>\n";
 	print "$msg\n";
 	print "<p>Please contact the credit pool maintainer.\n";
@@ -879,7 +880,7 @@ sub fatal {
 }
 
 sub userError {
-	$msg = shift;
+	my $msg = shift;
 	
 	if ($global_output_format eq "text") {
 		print "Oops!\n\n";
@@ -894,7 +895,7 @@ sub userError {
 }
 
 sub nonFatalUserError {
-	$msg = shift;
+	my $msg = shift;
 	if ($global_output_format eq "text") {
 		print "$msg\n";
 	} else {
