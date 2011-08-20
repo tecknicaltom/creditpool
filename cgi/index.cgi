@@ -166,8 +166,8 @@ EOF
 
 }
 sub summary {
-	$query=$dbh->prepare("select * from users where name=\"$name\"");
-	$query->execute();
+	$query=$dbh->prepare("select * from users where name=?");
+	$query->execute($name);
 	$ref=$query->fetchrow_hashref();
 	$history = $cgi->param('history');
 
@@ -182,8 +182,8 @@ sub summary {
 
 	$bal = $ref->{'credit'};
 
-	$query=$dbh->prepare("select * from trans_user where name=\"$name\" and status=\"pending\"");
-	$query->execute();
+	$query=$dbh->prepare("select * from trans_user where name=? and status=\"pending\"");
+	$query->execute($name);
 
 	print "<h3>Current balance: " . ::money($bal) . "</h3>\n";
 
@@ -217,8 +217,8 @@ sub summary {
 	print "These are the transactions from the past <input type=\"text\" name=\"history\" value=\"$history\" size=3 maxlength=5> days:<br>";
 	print "<input type=\"submit\" name=\"action\" value=\"Change History\"><p>\n";
 
-	$query=$dbh->prepare("select * from trans_user where name=\"$name\" and entered > DATE_SUB(NOW(), INTERVAL $history DAY)");
-	$query->execute();
+	$query=$dbh->prepare("select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)");
+	$query->execute($name, $history);
 	if ($query->rows()) {
 		::transList($query,0);
 	}
@@ -316,15 +316,15 @@ sub confirmSelected {
 	my @confirm=$cgi->param('confirm');
 	my $i;
 
+	$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=? and xid=?");
 	for ($i = 0; $i <= $#confirm; $i++) {
-		$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=\"$name\" and xid=$confirm[$i]");
-		$query->execute();
+		$query->execute($name, $confirm[$i]);
 	}
 }
 
 sub confirmAll{
-	$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=\"$name\"");
-	$query->execute();
+	$query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=?");
+	$query->execute($name);
 }
 
 sub pickFromList {
@@ -468,19 +468,19 @@ sub confirmTrans {
 	print "<th>Owes</th>";
 	print "</tr>";
 
+	$query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
 	for ($i = 0; $i <= $#suckers; $i++) {
-		$query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=\"$suckers[$i]\"");
-		$query->execute();
+		$query->execute($suckers[$i]);
 		$ref=$query->fetchrow_hashref();
 
 		$val = $cgi->param("val_$suckers[$i]");
 		# remove $ signs
 		$val =~ s/\$//g;
-                if ($val =~ /^[\d\s\+\-\*\/\(\)\.]*$/)
-                {
-                        $val = eval($val);
-                }
-                else 
+		if ($val =~ /^[\d\s\+\-\*\/\(\)\.]*$/)
+		{
+			$val = eval($val);
+		}
+		else 
 		{ 
 			$val = 0; 
 		}
@@ -499,8 +499,8 @@ sub confirmTrans {
 	print "</table><p>";
 	print "This means your credit for this transaction is " . ::money(-$sum) . ".<br>";
 
-	$query=$dbh->prepare("select credit from users where name=\"$name\"");
-	$query->execute();
+	$query=$dbh->prepare("select credit from users where name=?");
+	$query->execute($name);
 	$ref=$query->fetchrow_hashref();
 
 	print "Your new balance will be " . ::money($ref->{'credit'} - $sum) . ".";
@@ -591,8 +591,8 @@ sub finalizeTrans {
 	if ($sum != 0) {
 		$sum = -$sum;
 
-		$query=$dbh->prepare("insert trans_user (xid,name,credit,status) values ($xid,\"$name\",$sum,\"confirmed\")");
-		$query->execute();
+		$query=$dbh->prepare("insert trans_user (xid,name,credit,status) values (?, ?, ?,\"confirmed\")");
+		$query->execute($xid, $name, $sum);
 
 		::addToCredit($name, $sum);
 	}
@@ -605,14 +605,14 @@ sub addToCredit {
 	my $query;
 	my $val;
 	
-	$query=$dbh->prepare("select credit from users where name=\"$uid\"");
-	$query->execute();
+	$query=$dbh->prepare("select credit from users where name=?");
+	$query->execute($uid);
 	$val=$query->fetchrow_hashref()->{'credit'};
 	
 	$val += $inc;
 
-	$query=$dbh->prepare("update users set credit=$val where name=\"$uid\"");
-	$query->execute();
+	$query=$dbh->prepare("update users set credit=? where name=?");
+	$query->execute($val, $uid);
 }
 
 sub viewTransText {
@@ -730,8 +730,8 @@ sub passwordCommit {
 		userError("Passwords do no match.");
 	}
 
-	$query=$dbh->prepare("update users set password=OLD_PASSWORD(\"$p1\") where name=\"$name\"");
-	$query->execute();
+	$query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
+	$query->execute($p1, $name);
 }
 	
 sub confirmSession {
@@ -744,8 +744,8 @@ sub confirmSession {
 	#}
 	if ($password ne "") {
 		# using password auth
-		$query = $dbh->prepare("select password from users where flags like '%exists%' and name=\"$name\"");
-		$query->execute();
+		$query = $dbh->prepare("select password from users where flags like '%exists%' and name=?");
+		$query->execute($name);
 		$ref=$query->fetchrow_hashref();
 		
 		if (!$ref) {
@@ -764,8 +764,8 @@ sub confirmSession {
 	}
 
 	if ($cookie ne "") {
-		$query = $dbh->prepare("select cookie from auth_secrets where name=\"$name\" and stamp > date_sub(now(), interval 5 minute)");
-		$query->execute();
+		$query = $dbh->prepare("select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)");
+		$query->execute($name);
 
 		if ($query->rows() == 0) {
 			return "expire";
@@ -943,15 +943,15 @@ sub authSecret {
 	my $cookie;
 
 	if ($regen) {
-		$query=$dbh->prepare("replace auth_secrets (name,cookie) values(\"$name\",rand()*1000000000)");
-		$query->execute();
+		$query=$dbh->prepare("replace auth_secrets (name,cookie) values(?, rand()*1000000000)");
+		$query->execute($name);
 	} else {
-		$query=$dbh->prepare("update auth_secrets set stamp=now() where name=\"$name\"");
-		$query->execute();
+		$query=$dbh->prepare("update auth_secrets set stamp=now() where name=?");
+		$query->execute($name);
 	}
 
-	$query=$dbh->prepare("select cookie from auth_secrets where name=\"$name\"");
-	$query->execute();
+	$query=$dbh->prepare("select cookie from auth_secrets where name=?");
+	$query->execute($name);
 	$cookie = $query->fetchrow_hashref()->{'cookie'};
 	
 	#print "<input type=\"hidden\" name=\"password\" value=\"$password\">";
