@@ -149,18 +149,18 @@ exit;
 
 sub login {
 
-	print <<EOF;
+	print <<'EOF';
 <body bgcolor=black text=white>
 <img src="icons/credit-pool.jpg"><p>
 Please identify yourself.
-<form action=\"\" method=\"post\">
+<form action="" method="post">
 <table>
-<tr><td>User ID<td><input type=\"text\" name=\"name\" size=15 maxlength=15>
-<tr><td>Password<td><input type=\"password\" name=\"password\" size=15 maxlength=8>
-<tr><td><td><input type=\"submit\" name=\"submit\" value=\"Log in\">
+<tr><td>User ID<td><input type="text" name="name" size=15 maxlength=15>
+<tr><td>Password<td><input type="password" name="password" size=15 maxlength=8>
+<tr><td><td><input type="submit" name="submit" value="Log in">
 </table>
-<input type=\"hidden\" name=\"action\" value=\"summary\">
-<hr><input type=\"submit\" name=\"passwordChange\" value=\"Change Password\">
+<input type="hidden" name="action" value="summary">
+<hr><input type="submit" name="passwordChange" value="Change Password">
 </form></body>
 EOF
 
@@ -707,15 +707,13 @@ sub fullName {
 sub passwordChangeForm {
 	print <<EOF;
 <h1>New Password</h1>
-<form action=\"\" method=\"post\">
+<form action="" method="post">
 <table>
-EOF
-	print "<tr><td>User ID<td><input type=\"text\" name=\"name\" size=8 maxlength=15 value=\"$name\">";
-	print "<tr><td>Old Password<td><input type=\"password\" name=\"password\" size=8 maxlength=8 value=\"$password\">";
-	print <<EOF;
-<tr><td>New Password<td><input type=\"password\" name=\"newpass1\" size=8 maxlength=8>
-<tr><td>Again<td><input type=\"password\" name=\"newpass2\" size=8 maxlength=8>
-<input type=\"submit\" name=\"action\" value=\"Change Password\">
+<tr><td>User ID<td><input type="text" name="name" size=8 maxlength=15 value="$name">
+<tr><td>Old Password<td><input type="password" name="password" size=8 maxlength=8 value="$password">
+<tr><td>New Password<td><input type="password" name="newpass1" size=8 maxlength=8>
+<tr><td>Again<td><input type="password" name="newpass2" size=8 maxlength=8>
+<input type="submit" name="action" value="Change Password">
 </table>
 </form>
 EOF
