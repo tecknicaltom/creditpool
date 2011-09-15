@@ -669,7 +669,7 @@ sub viewTrans {
 	$ref=$query->fetchrow_hashref();
 
 	print "<h1>Transaction #$xid</h1>\n";
-	print "<h2>$ref->{'descrip'} ($ref->{'entered'})</h2>";
+	::escapedPrintf("<h2>%s (%s)</h2>\n", $ref->{'descrip'}, $ref->{'entered'});
 
 	$query=$dbh->prepare("select * from trans_user where xid=$xid");
 	$query->execute();
@@ -862,6 +862,12 @@ sub unArmorHTMLString {
 	$ret =~ s/&quot;/"/g;
 	$ret =~ s/&amp;/&/g;
 	return $ret;
+}
+
+sub escapedPrintf {
+	my $format = shift;
+	my @params = map { ::armorHTMLString($_) } @_;
+	printf($format, @params);
 }
 
 sub fatal {
