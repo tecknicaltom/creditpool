@@ -570,8 +570,8 @@ sub finalizeTrans {
 
 	::verifyFinalizeIntegrity($suckerlist);
 
-	my $query=$dbh->prepare("insert trans_global (creator,descrip) values(\"$name\",\"" . ::armorQString(::unArmorHTMLString($descrip)) . "\")");
-	$query->execute();
+	my $query=$dbh->prepare("insert trans_global (creator,descrip) values(?, ?)");
+	$query->execute($name, ::unArmorHTMLString($descrip));
 
 	$query=$dbh->prepare("select LAST_INSERT_ID() as id");
 	$query->execute();
@@ -842,13 +842,6 @@ sub money {
 sub timestamp {
 	my $stamp = shift;
 	return $stamp;
-}
-
-sub armorQString {
-	#armors a quoted string for SQL
-	my $ret = shift;
-	$ret =~ s/"/\\"/g;
-	return $ret;
 }
 
 sub armorHTMLString {
