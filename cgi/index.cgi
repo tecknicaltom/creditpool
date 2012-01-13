@@ -57,9 +57,9 @@ if ($action eq "Volume") {
 	exit;
 }
 
-print "Content-type:text/html\n\n";
+print 'Content-type:text/html', "\n\n";
 if ($global_output_format ne "text") {
-	print "<title>Credit Pool</title>\n";
+	print '<title>Credit Pool</title>', "\n";
 }
 
 # special case... allow no password for password change
@@ -76,8 +76,8 @@ if ($password eq "" && $cookie eq "") {
 }
 
 if (::confirmSession() eq "expire") {
-	print "<h3>Session expired</h3>";
-	print "You'll need to re-login to continue<hr>";
+	print '<h3>Session expired</h3>';
+	print 'You\'ll need to re-login to continue<hr>';
 	::login();
 	exit;
 }
@@ -148,7 +148,7 @@ if ($cgi->param('viewTrans')) {
 
 if ($action eq "mailsubmit") {
 	my $xid = ::finalizeTrans();
-	print "Transaction accepted.  Here's your confirmation:\n\n";
+	print 'Transaction accepted.  Here\'s your confirmation:', "\n\n";
 	::viewTrans($xid);
 	exit;
 }
@@ -184,8 +184,8 @@ sub summary {
 	if ($history eq "") {
 		$history = 7;
 	}
-	print "<body bgcolor=black text=white>\n";
-	print "<img src=\"icons/cp-small.jpg\" align=right>\n";
+	print '<body bgcolor=black text=white>', "\n";
+	print '<img src="icons/cp-small.jpg" align=right>', "\n";
 
 	
 	escapedPrintf('<h1>Summary Report for %s %s</h1>', $ref->{'firstname'}, $ref->{'lastname'});
@@ -204,28 +204,28 @@ sub summary {
 	}
 
 
-	print "<form action=\"\" method=\"post\">";
+	print '<form action="" method="post">';
 
 	if ($query->rows()) {
-		print "<hr><h3>Unconfirmed transactions</h3>\n";
+		print '<hr><h3>Unconfirmed transactions</h3>', "\n";
 		::transList($query,1);
-		print "<p>(Confirming a transaction means that you've seen it, not necessarily that you agree to it.  If you would like to contest a transaction, take it up with the transaction creator, in the \"Who did it?\" column.)";
+		print '<p>(Confirming a transaction means that you\'ve seen it, not necessarily that you agree to it.  If you would like to contest a transaction, take it up with the transaction creator, in the "Who did it?" column.)';
 	} else {
 		#print ("No pending transactions.\n");
 	}
 
-	print "<hr><h3>New transaction</h3>\n";
+	print '<hr><h3>New transaction</h3>', "\n";
 	
 	::newTransForm();
 
 	if ($history == 7) {
-		print "<hr><h3>The week in review</h3>\n";
+		print '<hr><h3>The week in review</h3>', "\n";
 	} else {
-		print "<hr><h3>Some time ago...</h3>\n";
+		print '<hr><h3>Some time ago...</h3>', "\n";
 	}
 
 	print "These are the transactions from the past <input type=\"text\" name=\"history\" value=\"$history\" size=3 maxlength=5> days:<br>";
-	print "<input type=\"submit\" name=\"action\" value=\"Change History\"><p>\n";
+	print '<input type="submit" name="action" value="Change History"><p>', "\n";
 
 	$query=$dbh->prepare("select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)");
 	$query->execute($name, $history);
@@ -233,26 +233,26 @@ sub summary {
 		::transList($query,0);
 	}
 
-	print "<hr>\n";
-	print "<h3>Totals</h3>\n";
+	print '<hr>', "\n";
+	print '<h3>Totals</h3>', "\n";
 
 	$query=$dbh->prepare("select firstname,lastname,credit from users where flags like '%exists%' order by credit");
 	$query->execute();
 
-	print "<table border=1>";
+	print '<table border=1>';
 	my $sum = 0;
 	my $users = 0;
 	while ($ref=$query->fetchrow_hashref()) {
 		my $value = $ref->{'credit'};
-		print "<tr>";
+		print '<tr>';
 		print "<td>" . $ref->{'firstname'} . " " . $ref->{'lastname'} . "</td>";
 		print "<td>" . ::money($value) . "</td>";
-		print "</tr>";
+		print '</tr>';
 		$sum += abs($value);
 		$users++;
 	}
 	$sum /= 2;
-	print "</table>";
+	print '</table>';
 	print "<p>Total imbalance: " . ::money($sum) . "<br>";
 	print "Average imbalance: " . ::money($sum / $users) . "<br>";
 
@@ -260,39 +260,39 @@ sub summary {
 	$query->execute();
 	$ref=$query->fetchrow_hashref();
 	print "Total throughput: " . ::money($ref->{'total'}/2) . "<br>";
-	print "<hr><h3>Charts (Holy alpha, Batman!)</h3>Draw a chart for somebody:<br>";
-	print "<input type=\"text\" name=\"chartme\" value=\"\" size=16 maxlength=16>  ";
-	print "<input type=\"submit\" name=\"action\" value=\"Chart\">";
-	print "<p>Or just look at this one: ";
-	print "<input type=\"submit\" name=\"action\" value=\"Volume\">";
+	print '<hr><h3>Charts (Holy alpha, Batman!)</h3>Draw a chart for somebody:<br>';
+	print '<input type="text" name="chartme" value="" size=16 maxlength=16>  ';
+	print '<input type="submit" name="action" value="Chart">';
+	print '<p>Or just look at this one: ';
+	print '<input type="submit" name="action" value="Volume">';
 	
 	::authSecret(1);
-	print "</form></body>";
+	print '</form></body>';
 }
 
 sub transList {
 	my $query = shift;
 	my $confirm = shift;
 
-	print "<table border=1>";
-	print "<tr>";
+	print '<table border=1>';
+	print '<tr>';
 	if ($confirm) {
-		print "<th>Confirm?</th>";
+		print '<th>Confirm?</th>';
 	}
-	print "<th>ID</th>";
-	print "<th>Date entered</th>";
-	#print "<th>Transaction date</th>";
-	print "<th>Cost</th>";
-	print "<th>Description</th>";
-	print "<th>Who did it?</th>";
-	print "</tr>";
+	print '<th>ID</th>';
+	print '<th>Date entered</th>';
+	#print '<th>Transaction date</th>';
+	print '<th>Cost</th>';
+	print '<th>Description</th>';
+	print '<th>Who did it?</th>';
+	print '</tr>';
 
 	my $ref=$query->fetchrow_hashref();
 	while($ref) {
 		my $g_query=$dbh->prepare("select * from trans_global where xid=$ref->{'xid'}");
 		$g_query->execute();
 		my $g_ref=$g_query->fetchrow_hashref();
-		print "<tr>";
+		print '<tr>';
 		if ($confirm) {
 			print "<td align=center><input type=\"checkbox\" name=\"confirm\" value=\"$ref->{'xid'}\"></td>";
 		}
@@ -304,22 +304,22 @@ sub transList {
 		print "<td>" . ::fullName($g_ref->{'creator'}) . "</td>";
 		$ref=$query->fetchrow_hashref();
 	}
-	print "</table><p>";
+	print '</table><p>';
 	if ($confirm) {
-		print "<input type=\"submit\" name=\"action\" value=\"Confirm Selected\">";
-		print "<input type=\"submit\" name=\"action\" value=\"Confirm All\">";
+		print '<input type="submit" name="action" value="Confirm Selected">';
+		print '<input type="submit" name="action" value="Confirm All">';
 	}
 }
 
 sub newTransForm() {
-	print "To create a new transaction, list the ID's of each person here:<br>\n";
-	print "<input type=\"text\" name=\"suckerlist\" value=\"\" size=50 maxlength=200><br>";
-	print "<input type=\"submit\" name=\"action\" value=\"Select Users\"><br>";
-	print "(Enter a list, separated by spaces.  For example, \"karthik chuck dan\")";
+	print 'To create a new transaction, list the ID\'s of each person here:<br>', "\n";
+	print '<input type="text" name="suckerlist" value="" size=50 maxlength=200><br>';
+	print '<input type="submit" name="action" value="Select Users"><br>';
+	print '(Enter a list, separated by spaces.  For example, "karthik chuck dan")';
 
-	print "<h4>-OR-</h4>";
+	print '<h4>-OR-</h4>';
 
-	print "<input type=\"submit\" name=\"action\" value=\"Pick From List\">";
+	print '<input type="submit" name="action" value="Pick From List">';
 }
 
 sub confirmSelected {
@@ -339,32 +339,32 @@ sub confirmAll{
 
 sub pickFromList {
 	::progressHeader(0);
-	print "<h1>Select Users</h1>\n";
-	print "Select participants:\n";
+	print '<h1>Select Users</h1>', "\n";
+	print 'Select participants:', "\n";
 
 	my $query=$dbh->prepare("select name,lastname,firstname from users where flags like '%exists%' order by lastname,firstname");
 	$query->execute();
 
-	print "<form action=\"\" method=\"post\">";
-	print "<table border=1>";
-	print "<tr>";
-	print "<th>Pick 'em!</th>";
-	print "<th>ID</th>";
-	print "<th>Name</th>";
-	print "</tr>";
+	print '<form action="" method="post">';
+	print '<table border=1>';
+	print '<tr>';
+	print '<th>Pick \'em!</th>';
+	print '<th>ID</th>';
+	print '<th>Name</th>';
+	print '</tr>';
 	while (my $ref=$query->fetchrow_hashref()) {
 		if ($ref->{'name'} ne $name) {
-			print "<tr>";
+			print '<tr>';
 			print "<td align=center><input type=\"checkbox\" name=\"sucker\" value=\"$ref->{'name'}\"></td>";
 			print "<td>$ref->{'name'}</td>";
 			print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
-			print "</tr>";
+			print '</tr>';
 		}
 	}
-	print "</table><p>";
-	print "<input type=\"submit\" name=\"action\" value=\"Select Users\">";
+	print '</table><p>';
+	print '<input type="submit" name="action" value="Select Users">';
 	::authSecret(0);
-	print "</form>";
+	print '</form>';
 }
 
 sub enterTransData {
@@ -383,14 +383,14 @@ sub enterTransData {
 	}
 
 	::progressHeader(1);
-	print "<h1>Transaction Data</h1>";
-	print "<form action=\"\" method=\"post\">";
-	print "<table border=1>";
+	print '<h1>Transaction Data</h1>';
+	print '<form action="" method="post">';
+	print '<table border=1>';
 
-	print "<tr>";
-	print "<th>Name</th>";
-	print "<th>...owes this much</th>";
-	print "</tr>";
+	print '<tr>';
+	print '<th>Name</th>';
+	print '<th>...owes this much</th>';
+	print '</tr>';
 	
 	my $query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
 	for ($i = 0; $i <= $#suckers; $i++) {
@@ -398,47 +398,47 @@ sub enterTransData {
 		my $ref=$query->fetchrow_hashref();
 
 		if ($ref) {
-			print "<tr>";
+			print '<tr>';
 			print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
 			if ($suckers[$i] ne $name) {
 				print "<td><input type=\"text\" name=\"val_$suckers[$i]\" value=\"\"></td>";
 			} else {
-				print "<td>N/A</td>";
+				print '<td>N/A</td>';
 			}
-			print "</tr>";
+			print '</tr>';
 			$good .= $suckers[$i] . " ";
 		} else {
-			print "<tr>";
+			print '<tr>';
 			escapedPrintf('<td><font color=red>%s</font></td>', $suckers[$i]);
-			print "<td>N/A</td>";
-			print "</tr>";
+			print '<td>N/A</td>';
+			print '</tr>';
 			$bad .= "<li><tt>" . $suckers[$i] . "</tt>\n";
 		}
 	}
 	
-	print "</table>";
-	print "(You may enter arithmetic, for example \"(22.05 + 5.22) / 3\")";
+	print '</table>';
+	print '(You may enter arithmetic, for example "(22.05 + 5.22) / 3")';
 
 	if ($bad ne "") {
-		print "<h2><font color=red>Error!</font></h2>";
-		print "I don't have any record of:";
+		print '<h2><font color=red>Error!</font></h2>';
+		print 'I don\'t have any record of:';
 		print "<blockquote><ul>$bad</ul></blockquote>";
-		print "Hit the BACK button to try again";
+		print 'Hit the BACK button to try again';
 		if ($good ne "") {
-			print ", or charge ahead if you want.";
+			print ', or charge ahead if you want.';
 		} else {
-			print ".";
+			print '.';
 		}
 	}
 
 	if ($good ne "") {
-		print "<p>Description:<br><input type=\"text\" name=\"descrip\" value=\"\" size=50 maxlength=100><p>";
+		print '<p>Description:<br><input type="text" name="descrip" value="" size=50 maxlength=100><p>';
 		print "<input type=\"hidden\" name=\"suckerlist\" value=\"$good\">";
-		print "<p><input type=\"submit\" name=\"action\" value=\"Submit Transaction\">";
+		print '<p><input type="submit" name="action" value="Submit Transaction">';
 		::authSecret(0);
 	}
 
-	print "</form>";
+	print '</form>';
 }
 
 sub confirmTrans {
@@ -459,24 +459,24 @@ sub confirmTrans {
 	}
 
 	::progressHeader(2);
-	print "<h1>Transaction Confirmation</h1>";
+	print '<h1>Transaction Confirmation</h1>';
 
 	my $query=$dbh->prepare("select NOW() as time");
 	$query->execute();
 	my $ref=$query->fetchrow_hashref();
 
-	print "<form action=\"\" method=\"post\">";
+	print '<form action="" method="post">';
 	print "<input type=\"hidden\" name=\"descrip\" value=\"" . ::armorHTMLString($descrip) . "\">";
 	print "<h2>" . ::armorHTMLString($descrip) . " ($ref->{'time'})</h2>";
 
 	print "<input type=\"hidden\" name=\"suckerlist\" value=\"$suckerlist\">";
 
-	print "<table border=1>";
+	print '<table border=1>';
 
-	print "<tr>";
-	print "<th>Name</th>";
-	print "<th>Owes</th>";
-	print "</tr>";
+	print '<tr>';
+	print '<th>Name</th>';
+	print '<th>Owes</th>';
+	print '</tr>';
 
 	$query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
 	for ($i = 0; $i <= $#suckers; $i++) {
@@ -499,14 +499,14 @@ sub confirmTrans {
 		$val = int($val * 100) / 100;
 		$sum += $val * 100;
 
-		print "<tr>";
+		print '<tr>';
 		print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
 		print "<td>" . ::money($val * 100) . "</td>";
 		print "<input type=\"hidden\" name=\"val_$suckers[$i]\" value=$val>";
-		print "</tr>";
+		print '</tr>';
 	}
 	
-	print "</table><p>";
+	print '</table><p>';
 	print "This means your credit for this transaction is " . ::money(-$sum) . ".<br>";
 
 	$query=$dbh->prepare("select credit from users where name=?");
@@ -515,9 +515,9 @@ sub confirmTrans {
 
 	print "Your new balance will be " . ::money($ref->{'credit'} - $sum) . ".";
 	
-	print "<p><input type=\"submit\" name=\"action\" value=\"Confirmed\">";
+	print '<p><input type="submit" name="action" value="Confirmed">';
 	::authSecret(0);
-	print "</form>";
+	print '</form>';
 }
 
 sub verifyFinalizeIntegrity {
@@ -652,7 +652,7 @@ sub viewTransText {
 		if ($ref->{'status'} eq "confirmed") {
 			print "\n";
 		} else {
-			print " (Not confirmed)\n";
+			print ' (Not confirmed)', "\n";
 		}
 	}
 }
@@ -874,9 +874,9 @@ sub unArmorHTMLString {
 
 sub fatal {
 	my $msg = shift;
-	print "<h1>Error</h1>\n";
+	print '<h1>Error</h1>', "\n";
 	print "$msg\n";
-	print "<p>Please contact the credit pool maintainer.\n";
+	print '<p>Please contact the credit pool maintainer.', "\n";
 	# TODO: This should be accompanied by more information
 	exit;
 }
@@ -885,12 +885,12 @@ sub userError {
 	my $msg = shift;
 	
 	if ($global_output_format eq "text") {
-		print "Oops!\n\n";
+		print 'Oops!', "\n\n";
 		print "$msg\n";
 	} else {
-		print "<h1>Oops!</h1>\n";
+		print '<h1>Oops!</h1>', "\n";
 		print "$msg\n";
-		print "<p>Hit the BACK button and give it another go.\n";
+		print '<p>Hit the BACK button and give it another go.', "\n";
 		# ...otherwise contact maintainer, etc...
 	}
 	exit;
@@ -906,8 +906,8 @@ sub nonFatalUserError {
 }
 
 sub footer {
-	print "<hr>";
-	print "<a href=\"\">Log in as someone else</a>";
+	print '<hr>';
+	print '<a href="">Log in as someone else</a>';
 }
 
 sub progressHeader {
@@ -917,25 +917,25 @@ sub progressHeader {
 	# This is bad code!  Haha!
 	for ($i = 0; $i < 4; $i++) {
 		if ($current == $i) {
-			print "<b><font size=+2>";
+			print '<b><font size=+2>';
 		}
 		if ($i == 0) {
-			print "Select Users";
+			print 'Select Users';
 		} elsif ($i == 1) {
-			print "Enter Data";
+			print 'Enter Data';
 		} elsif ($i == 2) {
-			print "Confirm Transaction";
+			print 'Confirm Transaction';
 		} elsif ($i == 3) {
-			print "Finished";
+			print 'Finished';
 		}
 		if ($i < 3) {
-			print " -> ";
+			print ' -> ';
 		}
 		if ($current == $i) {
-			print "</font></b>";
+			print '</font></b>';
 		}
 	}
-	print "<hr>\n";
+	print '<hr>', "\n";
 }
 
 sub authSecret {
