@@ -23,10 +23,18 @@
 
 use strict;
 use warnings;
+use diagnostics;
 use DBI;
 use CGI qw(:standard);
 #use Chart::Lines;
 #use Chart::Bars;
+
+sub escapedPrintf(@)
+{
+	my $format = shift;
+	my @params = map { ::armorHTMLString($_) } @_;
+	printf($format, @params);
+}
 
 my $dbh=dbConnect();
 my $cgi=CGI->new();
@@ -180,14 +188,14 @@ sub summary {
 	print "<img src=\"icons/cp-small.jpg\" align=right>\n";
 
 	
-	print "<h1>Summary Report for $ref->{'firstname'} $ref->{'lastname'}</h1>";
+	escapedPrintf('<h1>Summary Report for %s %s</h1>', $ref->{'firstname'}, $ref->{'lastname'});
 
 	my $bal = $ref->{'credit'};
 
 	$query=$dbh->prepare("select * from trans_user where name=? and status=\"pending\"");
 	$query->execute($name);
 
-	print "<h3>Current balance: " . ::money($bal) . "</h3>\n";
+	escapedPrintf '<h3>Current balance: %s</h3>\n', ::money($bal);
 
 	if ($bal < 0) {
 		print "This means the credit pool owes you " . ::money(abs($bal)) . ".\n";
@@ -292,7 +300,7 @@ sub transList {
 		print "<td>" . ::timestamp($g_ref->{'entered'}) . "</td>";
 		#print "<td>$g_ref->{'date'}</td>";
 		print "<td>" . ::money($ref->{'credit'}) . "</td>";
-		print "<td>$g_ref->{'descrip'}</td>";
+		escapedPrintf('<td>%s</td>', $g_ref->{'descrip'});
 		print "<td>" . ::fullName($g_ref->{'creator'}) . "</td>";
 		$ref=$query->fetchrow_hashref();
 	}
@@ -401,7 +409,7 @@ sub enterTransData {
 			$good .= $suckers[$i] . " ";
 		} else {
 			print "<tr>";
-			print "<td><font color=red>$suckers[$i]</font></td>";
+			escapedPrintf('<td><font color=red>%s</font></td>', $suckers[$i]);
 			print "<td>N/A</td>";
 			print "</tr>";
 			$bad .= "<li><tt>" . $suckers[$i] . "</tt>\n";
@@ -674,24 +682,24 @@ sub viewTrans {
 	$query=$dbh->prepare("select * from trans_user where xid=$xid");
 	$query->execute();
 
-	print "<table border=1>";
-	print "<tr>";
-	print "<th>Confirmed</th>";
-	print "<th>Name</th>";
-	print "<th>Credit</th>";
-	print "</tr>";
+	print '<table border=1>';
+	print '<tr>';
+	print '<th>Confirmed</th>';
+	print '<th>Name</th>';
+	print '<th>Credit</th>';
+	print '</tr>';
 	while ($ref=$query->fetchrow_hashref()) {
-		print "<tr>";
+		print '<tr>';
 		if ($ref->{'status'} eq "confirmed") {
-			print "<td align=center>*</td>";
+			print '<td align=center>*</td>';
 		} else {
-			print "<td>&nbsp</td>";
+			print '<td>&nbsp</td>';
 		}
-		print "<td>" . ::fullName($ref->{'name'}) . "</td>";
-		print "<td>" . ::money($ref->{'credit'}) . "</td>";
-		print "</tr>";
+		escapedPrintf '<td>%s</td>', ::fullName($ref->{'name'});
+		escapedPrintf '<td>%s</td>', ::money($ref->{'credit'});
+		print '</tr>';
 	}
-	print "</table>";
+	print '</table>';
 }
 
 sub fullName {
@@ -862,12 +870,6 @@ sub unArmorHTMLString {
 	$ret =~ s/&quot;/"/g;
 	$ret =~ s/&amp;/&/g;
 	return $ret;
-}
-
-sub escapedPrintf {
-	my $format = shift;
-	my @params = map { ::armorHTMLString($_) } @_;
-	printf($format, @params);
 }
 
 sub fatal {
