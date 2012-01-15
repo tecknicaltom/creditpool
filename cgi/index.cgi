@@ -224,7 +224,7 @@ sub summary {
 		print '<hr><h3>Some time ago...</h3>', "\n";
 	}
 
-	print "These are the transactions from the past <input type=\"text\" name=\"history\" value=\"$history\" size=3 maxlength=5> days:<br>";
+	escapedPrintf('These are the transactions from the past <input type="text" name="history" value="%d" size=3 maxlength=5> days:<br>', $history);
 	print '<input type="submit" name="action" value="Change History"><p>', "\n";
 
 	$query=$dbh->prepare("select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)");
@@ -245,7 +245,7 @@ sub summary {
 	while ($ref=$query->fetchrow_hashref()) {
 		my $value = $ref->{'credit'};
 		print '<tr>';
-		print "<td>" . $ref->{'firstname'} . " " . $ref->{'lastname'} . "</td>";
+		escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 		print "<td>" . ::money($value) . "</td>";
 		print '</tr>';
 		$sum += abs($value);
@@ -294,14 +294,14 @@ sub transList {
 		my $g_ref=$g_query->fetchrow_hashref();
 		print '<tr>';
 		if ($confirm) {
-			print "<td align=center><input type=\"checkbox\" name=\"confirm\" value=\"$ref->{'xid'}\"></td>";
+			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s"></td>', $ref->{'xid'});
 		}
-		print "<td><input type=\"submit\" name=\"viewTrans\" value=\"  $ref->{'xid'}  \"></td>";
+		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s"></td>', $ref->{'xid'});
 		print "<td>" . ::timestamp($g_ref->{'entered'}) . "</td>";
 		#print "<td>$g_ref->{'date'}</td>";
 		print "<td>" . ::money($ref->{'credit'}) . "</td>";
 		escapedPrintf('<td>%s</td>', $g_ref->{'descrip'});
-		print "<td>" . ::fullName($g_ref->{'creator'}) . "</td>";
+		escapedPrintf('<td>%s</td>', ::fullName($g_ref->{'creator'}));
 		$ref=$query->fetchrow_hashref();
 	}
 	print '</table><p>';
@@ -355,9 +355,9 @@ sub pickFromList {
 	while (my $ref=$query->fetchrow_hashref()) {
 		if ($ref->{'name'} ne $name) {
 			print '<tr>';
-			print "<td align=center><input type=\"checkbox\" name=\"sucker\" value=\"$ref->{'name'}\"></td>";
-			print "<td>$ref->{'name'}</td>";
-			print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
+			escapedPrintf('<td align=center><input type="checkbox" name="sucker" value="%s"></td>', $ref->{'name'});
+			escapedPrintf('<td>%s</td>', $ref->{'name'});
+			escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 			print '</tr>';
 		}
 	}
@@ -466,8 +466,8 @@ sub confirmTrans {
 	my $ref=$query->fetchrow_hashref();
 
 	print '<form action="" method="post">';
-	print "<input type=\"hidden\" name=\"descrip\" value=\"" . ::armorHTMLString($descrip) . "\">";
-	print "<h2>" . ::armorHTMLString($descrip) . " ($ref->{'time'})</h2>";
+	escapedPrintf('<input type="hidden" name="descrip" value="%s">', $descrip);
+	escapedPrintf('<h2>%s (%s)</h2>', $descrip, $ref->{'time'});
 
 	print "<input type=\"hidden\" name=\"suckerlist\" value=\"$suckerlist\">";
 
@@ -500,7 +500,7 @@ sub confirmTrans {
 		$sum += $val * 100;
 
 		print '<tr>';
-		print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
+		escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 		print "<td>" . ::money($val * 100) . "</td>";
 		print "<input type=\"hidden\" name=\"val_$suckers[$i]\" value=$val>";
 		print '</tr>';
@@ -940,7 +940,7 @@ sub progressHeader {
 
 sub authSecret {
 	my $regen = shift;
-	print "<input type=\"hidden\" name=\"name\" value=\"$name\">";
+	escapedPrintf('<input type="hidden" name="name" value="%s">', $name);
 	my $query;
 	my $ref;
 	my $cookie;
@@ -956,9 +956,8 @@ sub authSecret {
 	$query=$dbh->prepare("select cookie from auth_secrets where name=?");
 	$query->execute($name);
 	$cookie = $query->fetchrow_hashref()->{'cookie'};
-	
-	#print "<input type=\"hidden\" name=\"password\" value=\"$password\">";
-	print "<input type=\"hidden\" name=\"cookie\" value=\"$cookie\">";
+
+	escapedPrintf('<input type="hidden" name="cookie" value="%s">', $cookie);
 }
 
 sub drawChart {
