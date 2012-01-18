@@ -176,7 +176,7 @@ EOF
 
 }
 sub summary {
-	my $query=$dbh->prepare("select * from users where name=?");
+	my $query=$dbh->prepare('select * from users where name=?');
 	$query->execute($name);
 	my $ref=$query->fetchrow_hashref();
 	my $history = $cgi->param('history');
@@ -192,7 +192,7 @@ sub summary {
 
 	my $bal = $ref->{'credit'};
 
-	$query=$dbh->prepare("select * from trans_user where name=? and status=\"pending\"");
+	$query=$dbh->prepare('select * from trans_user where name=? and status="pending"');
 	$query->execute($name);
 
 	escapedPrintf '<h3>Current balance: %s</h3>\n', ::money($bal);
@@ -227,7 +227,7 @@ sub summary {
 	escapedPrintf('These are the transactions from the past <input type="text" name="history" value="%d" size=3 maxlength=5> days:<br>', $history);
 	print '<input type="submit" name="action" value="Change History"><p>', "\n";
 
-	$query=$dbh->prepare("select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)");
+	$query=$dbh->prepare('select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)');
 	$query->execute($name, $history);
 	if ($query->rows()) {
 		::transList($query,0);
@@ -236,7 +236,7 @@ sub summary {
 	print '<hr>', "\n";
 	print '<h3>Totals</h3>', "\n";
 
-	$query=$dbh->prepare("select firstname,lastname,credit from users where flags like '%exists%' order by credit");
+	$query=$dbh->prepare('select firstname,lastname,credit from users where flags like "%exists%" order by credit');
 	$query->execute();
 
 	print '<table border=1>';
@@ -256,7 +256,7 @@ sub summary {
 	print "<p>Total imbalance: " . ::money($sum) . "<br>";
 	print "Average imbalance: " . ::money($sum / $users) . "<br>";
 
-	$query=$dbh->prepare("select sum(abs(credit)) as total from trans_user");
+	$query=$dbh->prepare('select sum(abs(credit)) as total from trans_user');
 	$query->execute();
 	$ref=$query->fetchrow_hashref();
 	print "Total throughput: " . ::money($ref->{'total'}/2) . "<br>";
@@ -289,8 +289,8 @@ sub transList {
 
 	my $ref=$query->fetchrow_hashref();
 	while($ref) {
-		my $g_query=$dbh->prepare("select * from trans_global where xid=$ref->{'xid'}");
-		$g_query->execute();
+		my $g_query=$dbh->prepare('select * from trans_global where xid=?');
+		$g_query->execute($ref->{'xid'});
 		my $g_ref=$g_query->fetchrow_hashref();
 		print '<tr>';
 		if ($confirm) {
@@ -326,14 +326,14 @@ sub confirmSelected {
 	my @confirm=$cgi->param('confirm');
 	my $i;
 
-	my $query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=? and xid=?");
+	my $query=$dbh->prepare('update trans_user set status="confirmed" where name=? and xid=?');
 	for ($i = 0; $i <= $#confirm; $i++) {
 		$query->execute($name, $confirm[$i]);
 	}
 }
 
 sub confirmAll{
-	my $query=$dbh->prepare("update trans_user set status=\"confirmed\" where name=?");
+	my $query=$dbh->prepare('update trans_user set status="confirmed" where name=?');
 	$query->execute($name);
 }
 
@@ -342,7 +342,7 @@ sub pickFromList {
 	print '<h1>Select Users</h1>', "\n";
 	print 'Select participants:', "\n";
 
-	my $query=$dbh->prepare("select name,lastname,firstname from users where flags like '%exists%' order by lastname,firstname");
+	my $query=$dbh->prepare('select name,lastname,firstname from users where flags like "%exists%" order by lastname,firstname');
 	$query->execute();
 
 	print '<form action="" method="post">';
@@ -392,7 +392,7 @@ sub enterTransData {
 	print '<th>...owes this much</th>';
 	print '</tr>';
 	
-	my $query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
+	my $query=$dbh->prepare('select lastname,firstname from users where flags like "%exists%" and name=?');
 	for ($i = 0; $i <= $#suckers; $i++) {
 		$query->execute($suckers[$i]);
 		my $ref=$query->fetchrow_hashref();
@@ -461,7 +461,7 @@ sub confirmTrans {
 	::progressHeader(2);
 	print '<h1>Transaction Confirmation</h1>';
 
-	my $query=$dbh->prepare("select NOW() as time");
+	my $query=$dbh->prepare('select NOW() as time');
 	$query->execute();
 	my $ref=$query->fetchrow_hashref();
 
@@ -478,7 +478,7 @@ sub confirmTrans {
 	print '<th>Owes</th>';
 	print '</tr>';
 
-	$query=$dbh->prepare("select lastname,firstname from users where flags like '%exists%' and name=?");
+	$query=$dbh->prepare('select lastname,firstname from users where flags like "%exists%" and name=?');
 	for ($i = 0; $i <= $#suckers; $i++) {
 		$query->execute($suckers[$i]);
 		$ref=$query->fetchrow_hashref();
@@ -509,7 +509,7 @@ sub confirmTrans {
 	print '</table><p>';
 	print "This means your credit for this transaction is " . ::money(-$sum) . ".<br>";
 
-	$query=$dbh->prepare("select credit from users where name=?");
+	$query=$dbh->prepare('select credit from users where name=?');
 	$query->execute($name);
 	$ref=$query->fetchrow_hashref();
 
@@ -526,7 +526,7 @@ sub verifyFinalizeIntegrity {
 	my $confirm;
 	my $error = 0;
 
-	my $query = $dbh->prepare("select name from users where flags like '%exists%' and name=?");
+	my $query = $dbh->prepare('select name from users where flags like "%exists%" and name=?');
 	for (my $i = 0; $i <= $#suckers; $i++) {
 		my $val = $cgi->param("val_$suckers[$i]") * 100;
 
@@ -578,14 +578,14 @@ sub finalizeTrans {
 
 	::verifyFinalizeIntegrity($suckerlist);
 
-	my $query=$dbh->prepare("insert trans_global (creator,descrip) values(?, ?)");
+	my $query=$dbh->prepare('insert trans_global (creator,descrip) values(?, ?)');
 	$query->execute($name, ::unArmorHTMLString($descrip));
 
-	$query=$dbh->prepare("select LAST_INSERT_ID() as id");
+	$query=$dbh->prepare('select LAST_INSERT_ID() as id');
 	$query->execute();
 	my $xid=$query->fetchrow_hashref()->{'id'};
 	
-	$query=$dbh->prepare("insert trans_user (xid,name,credit) values (?, ?, ?)");
+	$query=$dbh->prepare('insert trans_user (xid,name,credit) values (?, ?, ?)');
 	for ($i = 0; $i <= $#suckers; $i++) {
 		$val = $cgi->param("val_$suckers[$i]") * 100;
 		$sum += $val;
@@ -601,7 +601,7 @@ sub finalizeTrans {
 	if ($sum != 0) {
 		$sum = -$sum;
 
-		$query=$dbh->prepare("insert trans_user (xid,name,credit,status) values (?, ?, ?,\"confirmed\")");
+		$query=$dbh->prepare('insert trans_user (xid,name,credit,status) values (?, ?, ?,"confirmed")');
 		$query->execute($xid, $name, $sum);
 
 		::addToCredit($name, $sum);
@@ -615,13 +615,13 @@ sub addToCredit {
 	my $query;
 	my $val;
 	
-	$query=$dbh->prepare("select credit from users where name=?");
+	$query=$dbh->prepare('select credit from users where name=?');
 	$query->execute($uid);
 	$val=$query->fetchrow_hashref()->{'credit'};
 	
 	$val += $inc;
 
-	$query=$dbh->prepare("update users set credit=? where name=?");
+	$query=$dbh->prepare('update users set credit=? where name=?');
 	$query->execute($val, $uid);
 }
 
@@ -631,8 +631,8 @@ sub viewTransText {
 	my $query;
 	my $ref;
 
-	$query=$dbh->prepare("select * from trans_global where xid=$xid");
-	$query->execute();
+	$query=$dbh->prepare('select * from trans_global where xid=?');
+	$query->execute($xid);
 
 	if ($query->rows() == 0) {
 		::fatal("Bad transaction ID in viewTrans");
@@ -643,8 +643,8 @@ sub viewTransText {
 	print "Transaction #$xid\n\n";
 	print "  $ref->{'descrip'} ($ref->{'entered'})\n\n";
 
-	$query=$dbh->prepare("select * from trans_user where xid=$xid");
-	$query->execute();
+	$query=$dbh->prepare('select * from trans_user where xid=?');
+	$query->execute($xid);
 
 	while ($ref=$query->fetchrow_hashref()) {
 		print ::fullName($ref->{'name'}) . " ";
@@ -667,8 +667,8 @@ sub viewTrans {
 	my $query;
 	my $ref;
 
-	$query=$dbh->prepare("select * from trans_global where xid=$xid");
-	$query->execute();
+	$query=$dbh->prepare('select * from trans_global where xid=?');
+	$query->execute($xid);
 
 	if ($query->rows() == 0) {
 		::fatal("Bad transaction ID in viewTrans");
@@ -679,8 +679,8 @@ sub viewTrans {
 	print "<h1>Transaction #$xid</h1>\n";
 	::escapedPrintf("<h2>%s (%s)</h2>\n", $ref->{'descrip'}, $ref->{'entered'});
 
-	$query=$dbh->prepare("select * from trans_user where xid=$xid");
-	$query->execute();
+	$query=$dbh->prepare('select * from trans_user where xid=?');
+	$query->execute($xid);
 
 	print '<table border=1>';
 	print '<tr>';
@@ -707,8 +707,8 @@ sub fullName {
 	my $query;
 	my $ref;
 
-	$query=$dbh->prepare("select firstname,lastname from users where name=\"$id\"");
-	$query->execute();
+	$query=$dbh->prepare('select firstname,lastname from users where name=?');
+	$query->execute($id);
 	$ref=$query->fetchrow_hashref();
 	
 	return $ref->{'firstname'} . " " . $ref->{'lastname'};
@@ -740,7 +740,7 @@ sub passwordCommit {
 		userError("Passwords do no match.");
 	}
 
-	$query=$dbh->prepare("update users set password=OLD_PASSWORD(?) where name=?");
+	$query=$dbh->prepare('update users set password=OLD_PASSWORD(?) where name=?');
 	$query->execute($p1, $name);
 }
 	
@@ -754,7 +754,7 @@ sub confirmSession {
 	#}
 	if ($password ne "") {
 		# using password auth
-		my $query = $dbh->prepare("select password from users where flags like '%exists%' and name=?");
+		my $query = $dbh->prepare('select password from users where flags like "%exists%" and name=?');
 		$query->execute($name);
 		my $ref=$query->fetchrow_hashref();
 		
@@ -764,8 +764,8 @@ sub confirmSession {
 		
 		my $crypt_pwd=$ref->{'password'};
 
-		$query = $dbh->prepare("select OLD_PASSWORD(\"$password\") as password");
-		$query->execute();
+		$query = $dbh->prepare('select OLD_PASSWORD(?) as password');
+		$query->execute($password);
 		my $entered_pwd=$query->fetchrow_hashref()->{'password'};
 
 		if ($crypt_pwd eq $entered_pwd) {
@@ -774,7 +774,7 @@ sub confirmSession {
 	}
 
 	if ($cookie ne "") {
-		my $query = $dbh->prepare("select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)");
+		my $query = $dbh->prepare('select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)');
 		$query->execute($name);
 
 		if ($query->rows() == 0) {
@@ -946,14 +946,14 @@ sub authSecret {
 	my $cookie;
 
 	if ($regen) {
-		$query=$dbh->prepare("replace auth_secrets (name,cookie) values(?, rand()*1000000000)");
+		$query=$dbh->prepare('replace auth_secrets (name,cookie) values(?, rand()*1000000000)');
 		$query->execute($name);
 	} else {
-		$query=$dbh->prepare("update auth_secrets set stamp=now() where name=?");
+		$query=$dbh->prepare('update auth_secrets set stamp=now() where name=?');
 		$query->execute($name);
 	}
 
-	$query=$dbh->prepare("select cookie from auth_secrets where name=?");
+	$query=$dbh->prepare('select cookie from auth_secrets where name=?');
 	$query->execute($name);
 	$cookie = $query->fetchrow_hashref()->{'cookie'};
 
@@ -981,7 +981,7 @@ sub drawChart {
 
 
 	$chartme=$cgi->param('chartme');
-	$query=$dbh->prepare("select NOW()+0 as time");
+	$query=$dbh->prepare('select NOW()+0 as time');
 	$query->execute();
 	
 	$low_bound = "20010101000000"; # start of time, Jan 2k1
@@ -991,19 +991,19 @@ sub drawChart {
 	$low_incr_bound = $low_bound;
 	$running_sum=0;
 	while ($low_incr_bound < $high_bound) {
-		$query=$dbh->prepare("select DATE_ADD($low_incr_bound, interval $increment)+0 as time");
-		$query->execute();
+		$query=$dbh->prepare('select DATE_ADD(?, interval ?)+0 as time');
+		$query->execute($low_incr_bound, $increment);
 		$high_incr_bound = $query->fetchrow_hashref()->{'time'};
 
-		$query=$dbh->prepare("select sum(credit) as sum from trans_user where name=\"$chartme\" and entered >= $low_incr_bound and entered < $high_incr_bound");
-		$query->execute();
+		$query=$dbh->prepare('select sum(credit) as sum from trans_user where name=? and entered >= ? and entered < ?');
+		$query->execute($chartme, $low_incr_bound, $high_incr_bound);
 		$sum=$query->fetchrow_hashref()->{'sum'}+0;
 		$sum/=100;
 
 		$running_sum += $sum;
 
-		$query=$dbh->prepare("select date_format($low_incr_bound,\"%b %y\") as date");
-		$query->execute();
+		$query=$dbh->prepare('select date_format(?,"%b %y") as date');
+		$query->execute($low_incr_bound);
 		$date=$query->fetchrow_hashref->{'date'};
 		
 		if ($date ne $lastdate) { $tick = $date; } else { $tick = ""; }
@@ -1048,7 +1048,7 @@ sub drawChart2 {
 	my $lastdate;
 	my $tick;
 
-	$query=$dbh->prepare("select NOW()+0 as time");
+	$query=$dbh->prepare('select NOW()+0 as time');
 	$query->execute();
 	
 	$low_bound = "20010101000000"; # start of time, Jan 2k1
@@ -1058,19 +1058,19 @@ sub drawChart2 {
 	$low_incr_bound = $low_bound;
 	$running_sum=0;
 	while ($low_incr_bound < $high_bound) {
-		$query=$dbh->prepare("select DATE_ADD($low_incr_bound, interval $increment)+0 as time");
-		$query->execute();
+		$query=$dbh->prepare('select DATE_ADD(?, interval ?)+0 as time');
+		$query->execute($low_incr_bound, $increment);
 		$high_incr_bound = $query->fetchrow_hashref()->{'time'};
 
-		$query=$dbh->prepare("select sum(abs(credit))/2 as sum from trans_user where entered >= $low_incr_bound and entered < $high_incr_bound");
-		$query->execute();
+		$query=$dbh->prepare('select sum(abs(credit))/2 as sum from trans_user where entered >= ? and entered < ?');
+		$query->execute($low_incr_bound, $high_incr_bound);
 		$sum=$query->fetchrow_hashref()->{'sum'}+0;
 		$sum/=100;
 
 		$running_sum += $sum;
 
-		$query=$dbh->prepare("select date_format($low_incr_bound,\"%e %b %y\") as date");
-		$query->execute();
+		$query=$dbh->prepare('select date_format(?,"%e %b %y") as date');
+		$query->execute($low_incr_bound);
 		$date=$query->fetchrow_hashref->{'date'};
 		
 		if ($date ne $lastdate) { $tick = $date; } else { $tick = ""; }
