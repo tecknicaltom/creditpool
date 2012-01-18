@@ -143,13 +143,6 @@ if ($cgi->param('viewTrans')) {
 	exit;
 }
 
-if ($action eq "mailsubmit") {
-	my $xid = ::finalizeTrans();
-	print 'Transaction accepted.  Here\'s your confirmation:', "\n\n";
-	::viewTrans($xid);
-	exit;
-}
-
 
 ::fatal("No code for what you're doing!");
 exit;
