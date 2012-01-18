@@ -44,7 +44,6 @@ my $name = $cgi->param('name');
 my $password = $cgi->param('password');
 my $cookie = $cgi->param('cookie');
 my $action = $cgi->param('action');
-my $global_output_format = $cgi->param('format');
 
 #HACK: render a chart before we generate text/html
 if ($action eq "Chart") {
@@ -58,9 +57,7 @@ if ($action eq "Volume") {
 }
 
 print 'Content-type:text/html', "\n\n";
-if ($global_output_format ne "text") {
-	print '<title>Credit Pool</title>', "\n";
-}
+print '<title>Credit Pool</title>', "\n";
 
 # special case... allow no password for password change
 if ($cgi->param('passwordChange')) {
@@ -625,44 +622,8 @@ sub addToCredit {
 	$query->execute($val, $uid);
 }
 
-sub viewTransText {
-	my $xid = shift;
-
-	my $query;
-	my $ref;
-
-	$query=$dbh->prepare('select * from trans_global where xid=?');
-	$query->execute($xid);
-
-	if ($query->rows() == 0) {
-		::fatal("Bad transaction ID in viewTrans");
-	}
-
-	$ref=$query->fetchrow_hashref();
-
-	print "Transaction #$xid\n\n";
-	print "  $ref->{'descrip'} ($ref->{'entered'})\n\n";
-
-	$query=$dbh->prepare('select * from trans_user where xid=?');
-	$query->execute($xid);
-
-	while ($ref=$query->fetchrow_hashref()) {
-		print ::fullName($ref->{'name'}) . " ";
-		print ::money($ref->{'credit'});
-		if ($ref->{'status'} eq "confirmed") {
-			print "\n";
-		} else {
-			print ' (Not confirmed)', "\n";
-		}
-	}
-}
-
 sub viewTrans {
 	my $xid = shift;
-	if ($global_output_format eq "text") {
-		::viewTransText($xid);
-		return;
-	}
 
 	my $query;
 	my $ref;
@@ -836,11 +797,7 @@ sub money {
 	my $ret;
 	
 	if ($num < 0 ) {
-		if ($global_output_format eq "text") {
-			$ret = sprintf("-\$%0.2f",abs($num/100));
-		} else {
-			$ret = sprintf("<font color=red>-\$%0.2f</font>",abs($num/100));
-		}
+		$ret = sprintf("<font color=red>-\$%0.2f</font>",abs($num/100));
 	} else {
 		$ret = sprintf("\$%0.2f",$num/100);
 	}
@@ -884,25 +841,16 @@ sub fatal {
 sub userError {
 	my $msg = shift;
 	
-	if ($global_output_format eq "text") {
-		print 'Oops!', "\n\n";
-		print "$msg\n";
-	} else {
-		print '<h1>Oops!</h1>', "\n";
-		print "$msg\n";
-		print '<p>Hit the BACK button and give it another go.', "\n";
-		# ...otherwise contact maintainer, etc...
-	}
+	print '<h1>Oops!</h1>', "\n";
+	print "$msg\n";
+	print '<p>Hit the BACK button and give it another go.', "\n";
+	# ...otherwise contact maintainer, etc...
 	exit;
 }
 
 sub nonFatalUserError {
 	my $msg = shift;
-	if ($global_output_format eq "text") {
-		print "$msg\n";
-	} else {
-		print "$msg<br>\n";
-	}
+	print "$msg<br>\n";
 }
 
 sub footer {
