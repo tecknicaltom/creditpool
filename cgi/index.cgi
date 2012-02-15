@@ -287,7 +287,7 @@ sub transList {
 			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s"></td>', $ref->{'xid'});
 		}
 		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s"></td>', $ref->{'xid'});
-		print "<td>" . ::timestamp($g_ref->{'entered'}) . "</td>";
+		print "<td>" . $g_ref->{'entered'} . "</td>";
 		#print "<td>$g_ref->{'date'}</td>";
 		print "<td>" . ::money($ref->{'credit'}) . "</td>";
 		escapedPrintf('<td>%s</td>', $g_ref->{'descrip'});
@@ -795,11 +795,6 @@ sub money {
 		$ret = sprintf("\$%0.2f",$num/100);
 	}
 	return $ret;
-}
-
-sub timestamp {
-	my $stamp = shift;
-	return $stamp;
 }
 
 sub armorHTMLString {
