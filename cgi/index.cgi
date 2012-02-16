@@ -32,8 +32,16 @@ use CGI qw(:standard);
 sub escapedPrintf(@)
 {
 	my $format = shift;
+	$format =~ s/(?<!\\)\%m/<span class="money">%d<\/span>/g;
 	my @params = map { ::armorHTMLString($_) } @_;
-	printf($format, @params);
+	my $output = sprintf($format, @params);
+	$output =~ s#(<span class="money)(">)(-?\d+)(</span>)#{
+		sprintf("$1%s$2%s\$%0.2f$4",
+			$3 < 0 ? ' negative' : '',
+			$3 < 0 ? '-' : '',
+			abs($3)/100);
+	}#ge;
+	print $output;
 }
 
 my $dbh=dbConnect();
@@ -185,12 +193,12 @@ sub summary {
 	$query=$dbh->prepare('select * from trans_user where name=? and status="pending"');
 	$query->execute($name);
 
-	escapedPrintf '<h3>Current balance: %s</h3>\n', ::money($bal);
+	escapedPrintf '<h3>Current balance: %m</h3>', $bal;
 
 	if ($bal < 0) {
-		print "This means the credit pool owes you " . ::money(abs($bal)) . ".\n";
+		escapedPrintf 'This means the credit pool owes you %m.', abs($bal);
 	} else {
-		print "This means you owe " . ::money($bal) . " to the credit pool.\n";
+		escapedPrintf 'This means you owe %m to the credit pool.', $bal;
 	}
 
 
@@ -236,15 +244,15 @@ sub summary {
 		my $value = $ref->{'credit'};
 		print '<tr>';
 		escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
-		print "<td>" . ::money($value) . "</td>";
+		escapedPrintf('<td>%m</td>', $value);
 		print '</tr>';
 		$sum += abs($value);
 		$users++;
 	}
 	$sum /= 2;
 	print '</table>';
-	print "<p>Total imbalance: " . ::money($sum) . "<br>";
-	print "Average imbalance: " . ::money($sum / $users) . "<br>";
+	escapedPrintf '<p>Total imbalance: %m<br>', $sum;
+	escapedPrintf 'Average imbalance: %m<br>', $sum / $users;
 
 	$query=$dbh->prepare('select sum(abs(credit)) as total from trans_user');
 	$query->execute();
