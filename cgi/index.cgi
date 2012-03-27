@@ -257,7 +257,7 @@ sub summary {
 	$query=$dbh->prepare('select sum(abs(credit)) as total from trans_user');
 	$query->execute();
 	$ref=$query->fetchrow_hashref();
-	print "Total throughput: " . ::money($ref->{'total'}/2) . "<br>";
+	escapedPrintf('Total throughput: %m<br>', $ref->{'total'}/2);
 	print '<hr><h3>Charts (Holy alpha, Batman!)</h3>Draw a chart for somebody:<br>';
 	print '<input type="text" name="chartme" value="" size=16 maxlength=16>  ';
 	print '<input type="submit" name="action" value="Chart">';
@@ -295,9 +295,9 @@ sub transList {
 			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s"></td>', $ref->{'xid'});
 		}
 		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s"></td>', $ref->{'xid'});
-		print "<td>" . $g_ref->{'entered'} . "</td>";
+		escapedPrintf('<td>%s</td>', $g_ref->{'entered'});
 		#print "<td>$g_ref->{'date'}</td>";
-		print "<td>" . ::money($ref->{'credit'}) . "</td>";
+		escapedPrintf('<td>%m</td>', $ref->{'credit'});
 		escapedPrintf('<td>%s</td>', $g_ref->{'descrip'});
 		escapedPrintf('<td>%s</td>', ::fullName($g_ref->{'creator'}));
 		$ref=$query->fetchrow_hashref();
@@ -397,9 +397,9 @@ sub enterTransData {
 
 		if ($ref) {
 			print '<tr>';
-			print "<td>$ref->{'firstname'} $ref->{'lastname'}</td>";
+			escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 			if ($suckers[$i] ne $name) {
-				print "<td><input type=\"text\" name=\"val_$suckers[$i]\" value=\"\"></td>";
+				escapedPrintf('<td><input type="text" name="val_%s" value=""></td>', $suckers[$i]);
 			} else {
 				print '<td>N/A</td>';
 			}
@@ -467,7 +467,7 @@ sub confirmTrans {
 	escapedPrintf('<input type="hidden" name="descrip" value="%s">', $descrip);
 	escapedPrintf('<h2>%s (%s)</h2>', $descrip, $ref->{'time'});
 
-	print "<input type=\"hidden\" name=\"suckerlist\" value=\"$suckerlist\">";
+	escapedPrintf('<input type="hidden" name="suckerlist" value="%s">', $suckerlist);
 
 	print '<table border=1>';
 
@@ -499,19 +499,19 @@ sub confirmTrans {
 
 		print '<tr>';
 		escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
-		print "<td>" . ::money($val * 100) . "</td>";
-		print "<input type=\"hidden\" name=\"val_$suckers[$i]\" value=$val>";
+		escapedPrintf('<td>%m</td>', $val*100);
+		escapedPrintf('<input type="hidden" name="val_%s" value="%s">', $suckers[$i], $val);
 		print '</tr>';
 	}
 	
 	print '</table><p>';
-	print "This means your credit for this transaction is " . ::money(-$sum) . ".<br>";
+	escapedPrintf('This means your credit for this transaction is %m.<br>', -$sum);
 
 	$query=$dbh->prepare('select credit from users where name=?');
 	$query->execute($name);
 	$ref=$query->fetchrow_hashref();
 
-	print "Your new balance will be " . ::money($ref->{'credit'} - $sum) . ".";
+	escapedPrintf('Your new balance will be %m.', $ref->{'credit'} - $sum);
 	
 	print '<p><input type="submit" name="action" value="Confirmed">';
 	::authSecret(0);
@@ -638,7 +638,7 @@ sub viewTrans {
 
 	$ref=$query->fetchrow_hashref();
 
-	print "<h1>Transaction #$xid</h1>\n";
+	escapedPrintf('<h1>Transaction #%d</h1>\n', $xid);
 	::escapedPrintf("<h2>%s (%s)</h2>\n", $ref->{'descrip'}, $ref->{'entered'});
 
 	$query=$dbh->prepare('select * from trans_user where xid=?');
@@ -658,7 +658,7 @@ sub viewTrans {
 			print '<td>&nbsp</td>';
 		}
 		escapedPrintf '<td>%s</td>', ::fullName($ref->{'name'});
-		escapedPrintf '<td>%s</td>', ::money($ref->{'credit'});
+		escapedPrintf '<td>%m</td>', $ref->{'credit'};
 		print '</tr>';
 	}
 	print '</table>';
