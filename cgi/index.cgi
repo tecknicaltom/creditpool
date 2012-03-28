@@ -64,8 +64,16 @@ if ($action eq "Volume") {
 	exit;
 }
 
-print 'Content-type:text/html', "\n\n";
-print '<title>Credit Pool</title>', "\n";
+print <<'EOF';
+Content-type: text/html
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<title>Credit Pool</title>
+	</head>
+EOF
 
 # special case... allow no password for password change
 if ($cgi->param('passwordChange')) {
@@ -82,7 +90,7 @@ if ($password eq "" && $cookie eq "") {
 
 if (::confirmSession() eq "expire") {
 	print '<h3>Session expired</h3>';
-	print 'You\'ll need to re-login to continue<hr>';
+	print 'You\'ll need to re-login to continue<hr />';
 	::login();
 	exit;
 }
@@ -163,12 +171,12 @@ sub login {
 Please identify yourself.
 <form action="" method="post">
 <table>
-<tr><td>User ID<td><input type="text" name="name" size=15 maxlength=15>
-<tr><td>Password<td><input type="password" name="password" size=15 maxlength=8>
-<tr><td><td><input type="submit" name="submit" value="Log in">
+<tr><td>User ID<td><input type="text" name="name" size=15 maxlength=15 />
+<tr><td>Password<td><input type="password" name="password" size=15 maxlength=8 />
+<tr><td><td><input type="submit" name="submit" value="Log in" />
 </table>
-<input type="hidden" name="action" value="summary">
-<hr><input type="submit" name="passwordChange" value="Change Password">
+<input type="hidden" name="action" value="summary" />
+<hr /><input type="submit" name="passwordChange" value="Change Password" />
 </form></body>
 EOF
 
@@ -205,25 +213,25 @@ sub summary {
 	print '<form action="" method="post">';
 
 	if ($query->rows()) {
-		print '<hr><h3>Unconfirmed transactions</h3>', "\n";
+		print '<hr /><h3>Unconfirmed transactions</h3>', "\n";
 		::transList($query,1);
 		print '<p>(Confirming a transaction means that you\'ve seen it, not necessarily that you agree to it.  If you would like to contest a transaction, take it up with the transaction creator, in the "Who did it?" column.)';
 	} else {
 		#print ("No pending transactions.\n");
 	}
 
-	print '<hr><h3>New transaction</h3>', "\n";
+	print '<hr /><h3>New transaction</h3>', "\n";
 	
 	::newTransForm();
 
 	if ($history == 7) {
-		print '<hr><h3>The week in review</h3>', "\n";
+		print '<hr /><h3>The week in review</h3>', "\n";
 	} else {
-		print '<hr><h3>Some time ago...</h3>', "\n";
+		print '<hr /><h3>Some time ago...</h3>', "\n";
 	}
 
-	escapedPrintf('These are the transactions from the past <input type="text" name="history" value="%d" size=3 maxlength=5> days:<br>', $history);
-	print '<input type="submit" name="action" value="Change History"><p>', "\n";
+	escapedPrintf('These are the transactions from the past <input type="text" name="history" value="%d" size=3 maxlength=5 /> days:<br />', $history);
+	print '<input type="submit" name="action" value="Change History" /><p>', "\n";
 
 	$query=$dbh->prepare('select * from trans_user where name=? and entered > DATE_SUB(NOW(), INTERVAL ? DAY)');
 	$query->execute($name, $history);
@@ -231,7 +239,7 @@ sub summary {
 		::transList($query,0);
 	}
 
-	print '<hr>', "\n";
+	print '<hr />', "\n";
 	print '<h3>Totals</h3>', "\n";
 
 	$query=$dbh->prepare('select firstname,lastname,credit from users where flags like "%exists%" order by credit');
@@ -251,18 +259,18 @@ sub summary {
 	}
 	$sum /= 2;
 	print '</table>';
-	escapedPrintf '<p>Total imbalance: %m<br>', $sum;
-	escapedPrintf 'Average imbalance: %m<br>', $sum / $users;
+	escapedPrintf '<p>Total imbalance: %m<br />', $sum;
+	escapedPrintf 'Average imbalance: %m<br />', $sum / $users;
 
 	$query=$dbh->prepare('select sum(abs(credit)) as total from trans_user');
 	$query->execute();
 	$ref=$query->fetchrow_hashref();
-	escapedPrintf('Total throughput: %m<br>', $ref->{'total'}/2);
-	print '<hr><h3>Charts (Holy alpha, Batman!)</h3>Draw a chart for somebody:<br>';
-	print '<input type="text" name="chartme" value="" size=16 maxlength=16>  ';
-	print '<input type="submit" name="action" value="Chart">';
+	escapedPrintf('Total throughput: %m<br />', $ref->{'total'}/2);
+	print '<hr /><h3>Charts (Holy alpha, Batman!)</h3>Draw a chart for somebody:<br />';
+	print '<input type="text" name="chartme" value="" size=16 maxlength=16 />  ';
+	print '<input type="submit" name="action" value="Chart" />';
 	print '<p>Or just look at this one: ';
-	print '<input type="submit" name="action" value="Volume">';
+	print '<input type="submit" name="action" value="Volume" />';
 	
 	::authSecret(1);
 	print '</form></body>';
@@ -292,9 +300,9 @@ sub transList {
 		my $g_ref=$g_query->fetchrow_hashref();
 		print '<tr>';
 		if ($confirm) {
-			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s"></td>', $ref->{'xid'});
+			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s" /></td>', $ref->{'xid'});
 		}
-		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s"></td>', $ref->{'xid'});
+		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s" /></td>', $ref->{'xid'});
 		escapedPrintf('<td>%s</td>', $g_ref->{'entered'});
 		#print "<td>$g_ref->{'date'}</td>";
 		escapedPrintf('<td>%m</td>', $ref->{'credit'});
@@ -304,20 +312,20 @@ sub transList {
 	}
 	print '</table><p>';
 	if ($confirm) {
-		print '<input type="submit" name="action" value="Confirm Selected">';
-		print '<input type="submit" name="action" value="Confirm All">';
+		print '<input type="submit" name="action" value="Confirm Selected" />';
+		print '<input type="submit" name="action" value="Confirm All" />';
 	}
 }
 
 sub newTransForm() {
-	print 'To create a new transaction, list the ID\'s of each person here:<br>', "\n";
-	print '<input type="text" name="suckerlist" value="" size=50 maxlength=200><br>';
-	print '<input type="submit" name="action" value="Select Users"><br>';
+	print 'To create a new transaction, list the ID\'s of each person here:<br />', "\n";
+	print '<input type="text" name="suckerlist" value="" size=50 maxlength=200 /><br />';
+	print '<input type="submit" name="action" value="Select Users" /><br />';
 	print '(Enter a list, separated by spaces.  For example, "karthik chuck dan")';
 
 	print '<h4>-OR-</h4>';
 
-	print '<input type="submit" name="action" value="Pick From List">';
+	print '<input type="submit" name="action" value="Pick From List" />';
 }
 
 sub confirmSelected {
@@ -353,14 +361,14 @@ sub pickFromList {
 	while (my $ref=$query->fetchrow_hashref()) {
 		if ($ref->{'name'} ne $name) {
 			print '<tr>';
-			escapedPrintf('<td align=center><input type="checkbox" name="sucker" value="%s"></td>', $ref->{'name'});
+			escapedPrintf('<td align=center><input type="checkbox" name="sucker" value="%s" /></td>', $ref->{'name'});
 			escapedPrintf('<td>%s</td>', $ref->{'name'});
 			escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 			print '</tr>';
 		}
 	}
 	print '</table><p>';
-	print '<input type="submit" name="action" value="Select Users">';
+	print '<input type="submit" name="action" value="Select Users" />';
 	::authSecret(0);
 	print '</form>';
 }
@@ -399,7 +407,7 @@ sub enterTransData {
 			print '<tr>';
 			escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 			if ($suckers[$i] ne $name) {
-				escapedPrintf('<td><input type="text" name="val_%s" value=""></td>', $suckers[$i]);
+				escapedPrintf('<td><input type="text" name="val_%s" value="" /></td>', $suckers[$i]);
 			} else {
 				print '<td>N/A</td>';
 			}
@@ -430,9 +438,9 @@ sub enterTransData {
 	}
 
 	if ($good ne "") {
-		print '<p>Description:<br><input type="text" name="descrip" value="" size=50 maxlength=100><p>';
-		print "<input type=\"hidden\" name=\"suckerlist\" value=\"$good\">";
-		print '<p><input type="submit" name="action" value="Submit Transaction">';
+		print '<p>Description:<br /><input type="text" name="descrip" value="" size="50" maxlength="100" /><p>';
+		print "<input type=\"hidden\" name=\"suckerlist\" value=\"$good\" />";
+		print '<p><input type="submit" name="action" value="Submit Transaction" />';
 		::authSecret(0);
 	}
 
@@ -464,10 +472,10 @@ sub confirmTrans {
 	my $ref=$query->fetchrow_hashref();
 
 	print '<form action="" method="post">';
-	escapedPrintf('<input type="hidden" name="descrip" value="%s">', $descrip);
+	escapedPrintf('<input type="hidden" name="descrip" value="%s" />', $descrip);
 	escapedPrintf('<h2>%s (%s)</h2>', $descrip, $ref->{'time'});
 
-	escapedPrintf('<input type="hidden" name="suckerlist" value="%s">', $suckerlist);
+	escapedPrintf('<input type="hidden" name="suckerlist" value="%s" />', $suckerlist);
 
 	print '<table border=1>';
 
@@ -500,12 +508,12 @@ sub confirmTrans {
 		print '<tr>';
 		escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
 		escapedPrintf('<td>%m</td>', $val*100);
-		escapedPrintf('<input type="hidden" name="val_%s" value="%s">', $suckers[$i], $val);
+		escapedPrintf('<input type="hidden" name="val_%s" value="%s" />', $suckers[$i], $val);
 		print '</tr>';
 	}
 	
 	print '</table><p>';
-	escapedPrintf('This means your credit for this transaction is %m.<br>', -$sum);
+	escapedPrintf('This means your credit for this transaction is %m.<br />', -$sum);
 
 	$query=$dbh->prepare('select credit from users where name=?');
 	$query->execute($name);
@@ -513,7 +521,7 @@ sub confirmTrans {
 
 	escapedPrintf('Your new balance will be %m.', $ref->{'credit'} - $sum);
 	
-	print '<p><input type="submit" name="action" value="Confirmed">';
+	print '<p><input type="submit" name="action" value="Confirmed" />';
 	::authSecret(0);
 	print '</form>';
 }
@@ -681,11 +689,11 @@ sub passwordChangeForm {
 <h1>New Password</h1>
 <form action="" method="post">
 <table>
-<tr><td>User ID<td><input type="text" name="name" size=8 maxlength=15 value="$name">
-<tr><td>Old Password<td><input type="password" name="password" size=8 maxlength=8 value="$password">
-<tr><td>New Password<td><input type="password" name="newpass1" size=8 maxlength=8>
-<tr><td>Again<td><input type="password" name="newpass2" size=8 maxlength=8>
-<input type="submit" name="action" value="Change Password">
+<tr><td>User ID<td><input type="text" name="name" size=8 maxlength=15 value="$name" />
+<tr><td>Old Password<td><input type="password" name="password" size=8 maxlength=8 value="$password" />
+<tr><td>New Password<td><input type="password" name="newpass1" size=8 maxlength=8 />
+<tr><td>Again<td><input type="password" name="newpass2" size=8 maxlength=8 />
+<input type="submit" name="action" value="Change Password" />
 </table>
 </form>
 EOF
@@ -846,11 +854,11 @@ sub userError {
 
 sub nonFatalUserError {
 	my $msg = shift;
-	print "$msg<br>\n";
+	print "$msg<br />\n";
 }
 
 sub footer {
-	print '<hr>';
+	print '<hr />';
 	print '<a href="">Log in as someone else</a>';
 }
 
@@ -879,12 +887,12 @@ sub progressHeader {
 			print '</font></b>';
 		}
 	}
-	print '<hr>', "\n";
+	print '<hr />', "\n";
 }
 
 sub authSecret {
 	my $regen = shift;
-	escapedPrintf('<input type="hidden" name="name" value="%s">', $name);
+	escapedPrintf('<input type="hidden" name="name" value="%s" />', $name);
 	my $query;
 	my $ref;
 	my $cookie;
@@ -901,7 +909,7 @@ sub authSecret {
 	$query->execute($name);
 	$cookie = $query->fetchrow_hashref()->{'cookie'};
 
-	escapedPrintf('<input type="hidden" name="cookie" value="%s">', $cookie);
+	escapedPrintf('<input type="hidden" name="cookie" value="%s" />', $cookie);
 }
 
 sub drawChart {
