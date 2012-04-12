@@ -377,8 +377,8 @@ sub enterTransData {
 	my $suckerlist = $cgi->param('suckerlist');
 	my @suckers = $cgi->param('sucker');
 	my $i;
-	my $bad = "";
-	my $good = "";
+	my @bad;
+	my @good;
 
 	if ($suckerlist ne "") {
 		@suckers = split(/ /, $suckerlist);
@@ -412,34 +412,39 @@ sub enterTransData {
 				print '<td>N/A</td>';
 			}
 			print '</tr>';
-			$good .= $suckers[$i] . " ";
+			push @good, $suckers[$i];
 		} else {
 			print '<tr>';
 			escapedPrintf('<td><font color=red>%s</font></td>', $suckers[$i]);
 			print '<td>N/A</td>';
 			print '</tr>';
-			$bad .= "<li><tt>" . $suckers[$i] . "</tt>\n";
+			#$bad .= "<li><tt>" . $suckers[$i] . "</tt>\n";
+			push @bad, $suckers[$i];
 		}
 	}
 	
 	print '</table>';
 	print '(You may enter arithmetic, for example "(22.05 + 5.22) / 3")';
 
-	if ($bad ne "") {
+	if (@bad) {
 		print '<h2><font color=red>Error!</font></h2>';
 		print 'I don\'t have any record of:';
-		print "<blockquote><ul>$bad</ul></blockquote>";
+		print '<blockquote><ul>';
+		for my $bad_input (@bad) {
+			escapedPrintf('<li><tt>%s</tt></li>', $bad_input);
+		}
+		print '</ul></blockquote>';
 		print 'Hit the BACK button to try again';
-		if ($good ne "") {
+		if (@good) {
 			print ', or charge ahead if you want.';
 		} else {
 			print '.';
 		}
 	}
 
-	if ($good ne "") {
+	if (@good) {
 		print '<p>Description:<br /><input type="text" name="descrip" value="" size="50" maxlength="100" /><p>';
-		print "<input type=\"hidden\" name=\"suckerlist\" value=\"$good\" />";
+		escapedPrintf('<input type="hidden" name="suckerlist" value="%s" />', join(' ', @good));
 		print '<p><input type="submit" name="action" value="Submit Transaction" />';
 		::authSecret(0);
 	}
@@ -646,8 +651,8 @@ sub viewTrans {
 
 	$ref=$query->fetchrow_hashref();
 
-	escapedPrintf('<h1>Transaction #%d</h1>\n', $xid);
-	::escapedPrintf("<h2>%s (%s)</h2>\n", $ref->{'descrip'}, $ref->{'entered'});
+	escapedPrintf('<h1>Transaction #%d</h1>', $xid);
+	::escapedPrintf('<h2>%s (%s)</h2>', $ref->{'descrip'}, $ref->{'entered'});
 
 	$query=$dbh->prepare('select * from trans_user where xid=?');
 	$query->execute($xid);
@@ -836,7 +841,7 @@ sub unArmorHTMLString {
 sub fatal {
 	my $msg = shift;
 	print '<h1>Error</h1>', "\n";
-	print "$msg\n";
+	escapedPrintf('%s', $msg);
 	print '<p>Please contact the credit pool maintainer.', "\n";
 	# TODO: This should be accompanied by more information
 	exit;
@@ -846,7 +851,7 @@ sub userError {
 	my $msg = shift;
 	
 	print '<h1>Oops!</h1>', "\n";
-	print "$msg\n";
+	escapedPrintf('%s', $msg);
 	print '<p>Hit the BACK button and give it another go.', "\n";
 	# ...otherwise contact maintainer, etc...
 	exit;
@@ -854,7 +859,8 @@ sub userError {
 
 sub nonFatalUserError {
 	my $msg = shift;
-	print "$msg<br />\n";
+	escapedPrintf('%s', $msg);
+	print '<br />';
 }
 
 sub footer {
