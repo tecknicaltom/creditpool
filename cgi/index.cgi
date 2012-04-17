@@ -50,7 +50,6 @@ my $cgi=CGI->new();
 # Throw some globals
 my $name = $cgi->param('name');
 my $password = $cgi->param('password');
-my $cookie = $cgi->param('cookie');
 my $action = $cgi->param('action');
 
 #HACK: render a chart before we generate text/html
@@ -64,17 +63,6 @@ if ($action eq "Volume") {
 	exit;
 }
 
-print <<'EOF';
-Content-type: text/html
-
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-		<title>Credit Pool</title>
-	</head>
-EOF
-
 # special case... allow no password for password change
 if ($cgi->param('passwordChange')) {
 	::passwordChangeForm();
@@ -82,20 +70,22 @@ if ($cgi->param('passwordChange')) {
 	exit;
 }
 
-if ($password eq "" && $cookie eq "") {
-	# No password... present login screen
+my $session_status = ::confirmSession();
+if ($session_status eq 'none')
+{
+	# No session... present login screen
 	::login();
 	exit;
 }
 
-if (::confirmSession() eq "expire") {
+if ($session_status eq 'expire') {
 	print '<h3>Session expired</h3>';
 	print 'You\'ll need to re-login to continue<hr />';
 	::login();
 	exit;
 }
 
-if ($action eq "summary") {
+if ($action eq '' || $action eq "summary") {
 	::summary();
 	::footer();
 	exit;
@@ -272,7 +262,6 @@ sub summary {
 	print '<p>Or just look at this one: ';
 	print '<input type="submit" name="action" value="Volume" />';
 	
-	::authSecret(1);
 	print '</form></body>';
 }
 
@@ -369,7 +358,6 @@ sub pickFromList {
 	}
 	print '</table><p>';
 	print '<input type="submit" name="action" value="Select Users" />';
-	::authSecret(0);
 	print '</form>';
 }
 
@@ -446,7 +434,6 @@ sub enterTransData {
 		print '<p>Description:<br /><input type="text" name="descrip" value="" size="50" maxlength="100" /><p>';
 		escapedPrintf('<input type="hidden" name="suckerlist" value="%s" />', join(' ', @good));
 		print '<p><input type="submit" name="action" value="Submit Transaction" />';
-		::authSecret(0);
 	}
 
 	print '</form>';
@@ -527,7 +514,6 @@ sub confirmTrans {
 	escapedPrintf('Your new balance will be %m.', $ref->{'credit'} - $sum);
 	
 	print '<p><input type="submit" name="action" value="Confirmed" />';
-	::authSecret(0);
 	print '</form>';
 }
 
@@ -721,13 +707,7 @@ sub passwordCommit {
 	
 sub confirmSession {
 	
-	if ($name eq "") {
-		::userError("You didn't enter your name.");
-	}
-	#if ($password eq "") {
-	#	::userError("You didn't enter your password.");
-	#}
-	if ($password ne "") {
+	if ($name ne "" && $password ne "") {
 		# using password auth
 		my $query = $dbh->prepare('select password from users where flags like "%exists%" and name=?');
 		$query->execute($name);
@@ -744,26 +724,31 @@ sub confirmSession {
 		my $entered_pwd=$query->fetchrow_hashref()->{'password'};
 
 		if ($crypt_pwd eq $entered_pwd) {
+
+			my $new_session_cookie = int(rand()*1000000000); # TODO: a more secure random source
+			$query=$dbh->prepare('replace auth_secrets (name,cookie) values(?, ?)');
+			$query->execute($name, $new_session_cookie);
+			print $cgi->header(-cookie=>$cgi->cookie(-name=>'session', -value=>$new_session_cookie));
 			return;
 		}
 	}
 
+	my $cookie = $cgi->cookie(-name=>'session');
 	if ($cookie ne "") {
-		my $query = $dbh->prepare('select cookie from auth_secrets where name=? and stamp > date_sub(now(), interval 5 minute)');
-		$query->execute($name);
+		my $query = $dbh->prepare('select name from auth_secrets where cookie=? and stamp > date_sub(now(), interval 5 minute)');
+		$query->execute($cookie);
 
 		if ($query->rows() == 0) {
 			return "expire";
 		}
 
-		my $dbcookie = $query->fetchrow_hashref()->{'cookie'};
-
-		if ($cookie eq $dbcookie) {
-			return;
-		}
+		$name = $query->fetchrow_hashref()->{'name'};
+		$query=$dbh->prepare('update auth_secrets set stamp=now() where name=?');
+		$query->execute($name);
+		return;
 	}
-	
-	userError("Unable to verify session.  Something bad happened.  Maybe you entered the wrong password?");
+
+	return 'none';
 }
 
 sub dbConnect {
@@ -838,6 +823,19 @@ sub unArmorHTMLString {
 	return $ret;
 }
 
+sub header {
+	print <<'EOF';
+Content-type: text/html
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<title>Credit Pool</title>
+	</head>
+EOF
+}
+
 sub fatal {
 	my $msg = shift;
 	print '<h1>Error</h1>', "\n";
@@ -894,28 +892,6 @@ sub progressHeader {
 		}
 	}
 	print '<hr />', "\n";
-}
-
-sub authSecret {
-	my $regen = shift;
-	escapedPrintf('<input type="hidden" name="name" value="%s" />', $name);
-	my $query;
-	my $ref;
-	my $cookie;
-
-	if ($regen) {
-		$query=$dbh->prepare('replace auth_secrets (name,cookie) values(?, rand()*1000000000)');
-		$query->execute($name);
-	} else {
-		$query=$dbh->prepare('update auth_secrets set stamp=now() where name=?');
-		$query->execute($name);
-	}
-
-	$query=$dbh->prepare('select cookie from auth_secrets where name=?');
-	$query->execute($name);
-	$cookie = $query->fetchrow_hashref()->{'cookie'};
-
-	escapedPrintf('<input type="hidden" name="cookie" value="%s" />', $cookie);
 }
 
 sub drawChart {
