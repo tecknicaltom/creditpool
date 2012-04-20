@@ -411,6 +411,8 @@ sub confirmTrans {
 	my $val;
 	my $sum = 0;
 
+	printHeader();
+
 	if ($descrip eq "") {
 		userError("You must enter a transaction description.");
 	}
