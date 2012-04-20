@@ -111,12 +111,6 @@ if ($action eq "Confirm All") {
 	exit;
 }
 
-if ($action eq "Pick From List") {
-	::pickFromList();
-	::footer();
-	exit;
-}
-
 if ($action eq "Select Users") {
 	::enterTransData();
 	::footer();
@@ -307,14 +301,18 @@ sub transList {
 }
 
 sub newTransForm() {
-	print 'To create a new transaction, list the ID\'s of each person here:<br />', "\n";
-	print '<input type="text" name="suckerlist" value="" size=50 maxlength=200 /><br />';
-	print '<input type="submit" name="action" value="Select Users" /><br />';
-	print '(Enter a list, separated by spaces.  For example, "karthik chuck dan")';
-
-	print '<h4>-OR-</h4>';
-
-	print '<input type="submit" name="action" value="Pick From List" />';
+	my $query=$dbh->prepare('select name,lastname,firstname from users where flags like "%exists%" order by firstname,lastname,name');
+	$query->execute();
+	print '<select multiple name="sucker">';
+	while (my $ref=$query->fetchrow_hashref()) {
+		if ($ref->{'name'} ne $name) {
+			my ($fullname) = ($ref->{'firstname'} . ' ' . $ref->{'lastname'}) =~ /\s*\b(.*)\b\s*/;
+			escapedPrintf('  <option value="%s">%s - %s</option>', $ref->{'name'}, $fullname, $ref->{'name'});
+		}
+	}
+	print '</select>';
+	print '<br />';
+	print '<input type="submit" name="action" value="Select Users" />';
 }
 
 sub confirmSelected {
@@ -332,50 +330,17 @@ sub confirmAll{
 	$query->execute($name);
 }
 
-sub pickFromList {
-	::progressHeader(0);
-	print '<h1>Select Users</h1>', "\n";
-	print 'Select participants:', "\n";
-
-	my $query=$dbh->prepare('select name,lastname,firstname from users where flags like "%exists%" order by lastname,firstname');
-	$query->execute();
-
-	print '<form action="" method="post">';
-	print '<table border=1>';
-	print '<tr>';
-	print '<th>Pick \'em!</th>';
-	print '<th>ID</th>';
-	print '<th>Name</th>';
-	print '</tr>';
-	while (my $ref=$query->fetchrow_hashref()) {
-		if ($ref->{'name'} ne $name) {
-			print '<tr>';
-			escapedPrintf('<td align=center><input type="checkbox" name="sucker" value="%s" /></td>', $ref->{'name'});
-			escapedPrintf('<td>%s</td>', $ref->{'name'});
-			escapedPrintf('<td>%s %s</td>', $ref->{'firstname'}, $ref->{'lastname'});
-			print '</tr>';
-		}
-	}
-	print '</table><p>';
-	print '<input type="submit" name="action" value="Select Users" />';
-	print '</form>';
-}
-
 sub enterTransData {
-	my $suckerlist = $cgi->param('suckerlist');
 	my @suckers = $cgi->param('sucker');
 	my $i;
 	my @bad;
 	my @good;
 
-	if ($suckerlist ne "") {
-		@suckers = split(/ /, $suckerlist);
-	}
-
 	if ($#suckers == -1) {
 		userError("You didn't actually pick anyone.");
 	}
 
+	printHeader();
 	::progressHeader(1);
 	print '<h1>Transaction Data</h1>';
 	print '<form action="" method="post">';
@@ -823,7 +788,7 @@ sub unArmorHTMLString {
 	return $ret;
 }
 
-sub header {
+sub printHeader {
 	print <<'EOF';
 Content-type: text/html
 
