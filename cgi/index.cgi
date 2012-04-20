@@ -143,7 +143,7 @@ if ($action eq "Change Password") {
 }
 
 # Might not be an action
-if ($cgi->param('viewTrans')) {
+if ($action eq 'viewTrans' && $cgi->param('viewTrans') ne '') {
 	::viewTrans($cgi->param('viewTrans'));
 	::footer();
 	exit;
@@ -291,7 +291,7 @@ sub transList {
 		if ($confirm) {
 			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s" /></td>', $ref->{'xid'});
 		}
-		escapedPrintf('<td><input type="submit" name="viewTrans" value="%s" /></td>', $ref->{'xid'});
+		escapedPrintf('<td><a href="?action=viewTrans&viewTrans=%s" />%s</a></td>', $ref->{'xid'}, $ref->{'xid'});
 		escapedPrintf('<td>%s</td>', $g_ref->{'entered'});
 		#print "<td>$g_ref->{'date'}</td>";
 		escapedPrintf('<td>%m</td>', $ref->{'credit'});
