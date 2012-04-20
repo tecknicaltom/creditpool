@@ -706,6 +706,7 @@ sub confirmSession {
 		$query->execute($cookie);
 
 		if ($query->rows() == 0) {
+			print $cgi->header(-cookie=>$cgi->cookie(-name=>'session', -value=>''));
 			return "expire";
 		}
 
