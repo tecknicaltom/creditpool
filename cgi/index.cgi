@@ -86,6 +86,7 @@ if ($session_status eq 'expire') {
 }
 
 if ($action eq '' || $action eq "summary") {
+	::printHeader();
 	::summary();
 	::footer();
 	exit;
@@ -112,12 +113,14 @@ if ($action eq "Confirm All") {
 }
 
 if ($action eq "Select Users") {
+	::printHeader();
 	::enterTransData();
 	::footer();
 	exit;
 }
 
 if ($action eq "Submit Transaction") {
+	::printHeader();
 	::confirmTrans();
 	::footer();
 	exit;
@@ -256,7 +259,7 @@ sub summary {
 	print '<p>Or just look at this one: ';
 	print '<input type="submit" name="action" value="Volume" />';
 	
-	print '</form></body>';
+	print '</form>';
 }
 
 sub transList {
@@ -285,7 +288,7 @@ sub transList {
 		if ($confirm) {
 			escapedPrintf('<td align=center><input type="checkbox" name="confirm" value="%s" /></td>', $ref->{'xid'});
 		}
-		escapedPrintf('<td><a href="?action=viewTrans&viewTrans=%s" />%s</a></td>', $ref->{'xid'}, $ref->{'xid'});
+		escapedPrintf('<td><a href="?action=viewTrans&amp;viewTrans=%s">%s</a></td>', $ref->{'xid'}, $ref->{'xid'});
 		escapedPrintf('<td>%s</td>', $g_ref->{'entered'});
 		#print "<td>$g_ref->{'date'}</td>";
 		escapedPrintf('<td>%m</td>', $ref->{'credit'});
@@ -340,7 +343,6 @@ sub enterTransData {
 		userError("You didn't actually pick anyone.");
 	}
 
-	printHeader();
 	::progressHeader(1);
 	print '<h1>Transaction Data</h1>';
 	print '<form action="" method="post">';
@@ -410,8 +412,6 @@ sub confirmTrans {
 	my $i;
 	my $val;
 	my $sum = 0;
-
-	printHeader();
 
 	if ($descrip eq "") {
 		userError("You must enter a transaction description.");
@@ -830,8 +830,7 @@ sub nonFatalUserError {
 }
 
 sub footer {
-	print '<hr />';
-	print '<a href="">Log in as someone else</a>';
+	print '</body></html>';
 }
 
 sub progressHeader {
