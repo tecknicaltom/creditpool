@@ -695,7 +695,7 @@ sub confirmSession {
 			my $new_session_cookie = int(rand()*1000000000); # TODO: a more secure random source
 			$query=$dbh->prepare('replace auth_secrets (name,cookie) values(?, ?)');
 			$query->execute($name, $new_session_cookie);
-			print $cgi->header(-cookie=>$cgi->cookie(-name=>'session', -value=>$new_session_cookie));
+			print $cgi->header(-cookie=>$cgi->cookie(-name=>'session', -value=>$new_session_cookie, -httponly=>1));
 			return;
 		}
 	}
